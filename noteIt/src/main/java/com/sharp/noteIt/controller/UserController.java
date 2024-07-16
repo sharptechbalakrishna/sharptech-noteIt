@@ -17,7 +17,7 @@ public class UserController {
 	@Autowired
 	CustomerServiceI service;
 	
-	@PostMapping("/saveUser")
+	@PostMapping("/register")
 	public String saveCustomer(@RequestBody CustomerRequest request) {
 		
 		service.saveCustomer(request);
