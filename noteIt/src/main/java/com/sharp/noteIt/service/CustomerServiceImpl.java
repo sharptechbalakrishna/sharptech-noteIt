@@ -1,5 +1,6 @@
 package com.sharp.noteIt.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.sharp.noteIt.model.CustomerDoc;
@@ -8,13 +9,15 @@ import com.sharp.noteIt.repo.CustomerRepository;
 
 @Service
 public class CustomerServiceImpl implements CustomerServiceI{
-
+	
+	@Autowired
 	CustomerRepository repo;
+	
 	@Override
 	public CustomerDoc saveCustomer(CustomerRequest request) {
 		// TODO Auto-generated method stub
-		repo.save(convertPojoToEntity(request));
-		return null;
+		return repo.save(convertPojoToEntity(request));
+		
 	}
 	private CustomerDoc convertPojoToEntity(CustomerRequest request) {
 		CustomerDoc doc = new CustomerDoc();
@@ -23,5 +26,6 @@ public class CustomerServiceImpl implements CustomerServiceI{
 		doc.setPhone(request.getPhone());
 		return doc;
 	}
+	
 
 }

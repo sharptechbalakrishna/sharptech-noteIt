@@ -2,16 +2,19 @@ package com.sharp.noteIt.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
-import lombok.Getter;
-import lombok.Setter;
+import jakarta.persistence.Table;
 
-@Getter
-@Setter
-@Entity(name = "CUSTOMER")
+
+
+
+@Entity
+@Table(name = "customer")
 public class CustomerDoc {
 
 	@Id
+	@GeneratedValue
 	private Long id;
 	@Column
 	private String name;
