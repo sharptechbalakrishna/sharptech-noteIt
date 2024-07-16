@@ -24,8 +24,15 @@ public class CustomerServiceImpl implements CustomerServiceI{
 		doc.setEmail(request.getEmail());
 		doc.setName(request.getName());
 		doc.setPhone(request.getPhone());
+		doc.setPassword(request.getPassword());
 		return doc;
 	}
 	
+	
+	@Override
+    public CustomerDoc login(String phone, String password) {
+        return repo.findByPhoneAndPassword(phone, password)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid phone or password"));
+    }
 
 }
