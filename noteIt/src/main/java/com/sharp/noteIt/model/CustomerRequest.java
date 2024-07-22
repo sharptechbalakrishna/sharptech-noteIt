@@ -11,10 +11,17 @@ public class CustomerRequest implements Serializable{
 	 * 
 	 */
 	private static final long serialVersionUID = -2102633356770338746L;
+	private Long id;
 	private String name;
 	private String email;
 	private String phone;
 	private String password;
+	public Long getId() {
+		return id;
+	}
+	public void setId(Long id) {
+		this.id = id;
+	}
 	public String getName() {
 		return name;
 	}
@@ -39,6 +46,5 @@ public class CustomerRequest implements Serializable{
 	public void setPassword(String password) {
 		this.password = password;
 	}
-	
 	
 }
