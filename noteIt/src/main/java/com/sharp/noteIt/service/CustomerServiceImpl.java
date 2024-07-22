@@ -1,5 +1,6 @@
 package com.sharp.noteIt.service;
 
+import java.util.Date;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +18,8 @@ public class CustomerServiceImpl implements CustomerServiceI {
 
 	@Override
 	public CustomerDoc saveCustomer(CustomerRequest request) {
-		return repo.save(convertPojoToEntity(request));
+		CustomerDoc convertPojoToEntity = convertPojoToEntity(request);
+		return repo.save(convertPojoToEntity);
 
 	}
 
@@ -25,9 +27,14 @@ public class CustomerServiceImpl implements CustomerServiceI {
 		CustomerDoc doc = new CustomerDoc();
 		doc.setId(request.getId());
 		doc.setEmail(request.getEmail());
-		doc.setName(request.getName());
+		doc.setFirstName(request.getFirstName());
+		doc.setLastName(request.getLastName());
+		doc.setUserName(request.getUserName());
 		doc.setPhone(request.getPhone());
 		doc.setPassword(request.getPassword());
+		doc.setCreatedBy(request.getUserName());
+		doc.setCreatedTs(new Date());
+		doc.setUpdatedTs(new Date());
 		return doc;
 	}
 
@@ -38,8 +45,8 @@ public class CustomerServiceImpl implements CustomerServiceI {
 	}
 
 	@Override
-	public CustomerDoc getCustomerProfile(String name) {
-		return repo.findByName(name).orElseThrow(() -> new IllegalArgumentException("Customer not found"));
+	public CustomerDoc getCustomerProfile(String firstName) {
+		return repo.getCustomerByfirstName(firstName).orElseThrow(() -> new IllegalArgumentException("Customer not found"));
 	}
 
 	@Override

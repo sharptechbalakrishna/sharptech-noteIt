@@ -8,13 +8,21 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "customer")
-public class CustomerDoc {
+public class CustomerDoc extends BaseDoc{
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 5356759213022980760L;
 	@Id
 	@GeneratedValue
 	private Long id;
 	@Column
-	private String name;
+	private String firstName;
+	@Column
+	private String lastName;
+	@Column
+	private String userName;
 	@Column
 	private String email;
 	@Column
@@ -27,11 +35,23 @@ public class CustomerDoc {
 	public void setId(Long id) {
 		this.id = id;
 	}
-	public String getName() {
-		return name;
+	public String getFirstName() {
+		return firstName;
 	}
-	public void setName(String name) {
-		this.name = name;
+	public void setFirstName(String firstName) {
+		this.firstName = firstName;
+	}
+	public String getLastName() {
+		return lastName;
+	}
+	public void setLastName(String lastName) {
+		this.lastName = lastName;
+	}
+	public String getUserName() {
+		return userName;
+	}
+	public void setUserName(String userName) {
+		this.userName = userName;
 	}
 	public String getEmail() {
 		return email;
@@ -51,5 +71,9 @@ public class CustomerDoc {
 	public void setPassword(String password) {
 		this.password = password;
 	}
+	
+	
+	
+	
 	
 }

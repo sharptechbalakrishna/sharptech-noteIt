@@ -38,9 +38,9 @@ public class UserController {
     public List<CustomerDoc> getAllCustomers() {
         return service.getAllCustomers();
     }
-	@GetMapping("/userDetails/{name}")
-    public CustomerDoc getCustomerByName(@PathVariable String name) {
-        return service.getCustomerProfile(name);
+	@GetMapping("/userDetails/{firstName}")
+    public CustomerDoc getCustomerByName(@PathVariable String firstName) {
+        return service.getCustomerProfile(firstName);
     }
 
   

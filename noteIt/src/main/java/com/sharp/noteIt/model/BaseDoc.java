@@ -4,9 +4,7 @@ import java.io.Serializable;
 import java.util.Date;
 
 import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
 
-@Entity
 public class BaseDoc implements Serializable {
 
 	/**
@@ -20,5 +18,23 @@ public class BaseDoc implements Serializable {
 	private Date createdTs;
 	@Column
 	private Date updatedTs;
-
+	
+	public String getCreatedBy() {
+		return createdBy;
+	}
+	public void setCreatedBy(String createdBy) {
+		this.createdBy = createdBy;
+	}
+	public Date getCreatedTs() {
+		return createdTs;
+	}
+	public void setCreatedTs(Date createdTs) {
+		this.createdTs = createdTs;
+	}
+	public Date getUpdatedTs() {
+		return updatedTs;
+	}
+	public void setUpdatedTs(Date updatedTs) {
+		this.updatedTs = updatedTs;
+	}
 }
