@@ -4,7 +4,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -32,5 +34,22 @@ public class UserController {
 		System.out.println("Attempting to login with phone: " + phone); // Print to console
 		return service.login(phone, password);
 	}
+//	@PostMapping("/profile")
+//	public ResponseEntity<?> profile(@RequestBody CustomerRequest request)
+//	{
+//		CustomerDoc profile = service.saveCustomer(request);
+//	
+//		return new ResponseEntity<>(profile, HttpStatus.CREATED);
+//		
+//	}
+	@GetMapping("/{name}")
+    public CustomerDoc getCustomerByName(@PathVariable String name) {
+        return service.getCustomerProfile(name);
+    }
+
+    @PutMapping("/profile")
+    public CustomerDoc updateCustomerProfile(@RequestBody CustomerRequest request) {
+        return service.updateCustomerProfile(request);
+    }
 
 }

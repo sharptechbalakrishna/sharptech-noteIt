@@ -7,4 +7,8 @@ public interface CustomerServiceI {
 
 	public CustomerDoc saveCustomer(CustomerRequest request);
 	public CustomerDoc login(String phone, String password);
+	//public CustomerDoc profile(CustomerRequest request);
+	   CustomerDoc getCustomerProfile(String name);
+	    CustomerDoc updateCustomerProfile(CustomerRequest request);
+
 }
