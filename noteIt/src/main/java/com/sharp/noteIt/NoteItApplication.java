@@ -11,3 +11,12 @@ public class NoteItApplication {
 	}
 
 }
+//borrowerName
+//phoneNumber
+//email
+//principalAmount
+//interestrate
+//creditbasis
+//creditstatus
+//borrowed date
+//end date

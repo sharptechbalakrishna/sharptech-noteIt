@@ -2,6 +2,7 @@ package com.sharp.noteIt.model;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
 
 import lombok.Data;
 
@@ -19,6 +20,8 @@ public class CustomerRequest implements Serializable{
 	private String password;
 	private String lastName;
 	private String userName;
+	private List<BorrowerDoc> borrowers;
+
 	
 	public Long getId() {
 		return id;
@@ -61,6 +64,12 @@ public class CustomerRequest implements Serializable{
 	}
 	public void setUserName(String userName) {
 		this.userName = userName;
+	}
+	public List<BorrowerDoc> getBorrowers() {
+		return borrowers;
+	}
+	public void setBorrowers(List<BorrowerDoc> borrowers) {
+		this.borrowers = borrowers;
 	}
 	
 	
