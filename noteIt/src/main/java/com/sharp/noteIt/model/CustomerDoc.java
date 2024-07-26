@@ -2,6 +2,8 @@ package com.sharp.noteIt.model;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -44,6 +46,7 @@ public class CustomerDoc extends BaseDoc {
 
     @OneToMany(targetEntity = BorrowerDoc.class, cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinColumn(name = "customer_id", referencedColumnName = "id")
+    @JsonManagedReference
     private List<BorrowerDoc> borrowers;
 //    
 //   

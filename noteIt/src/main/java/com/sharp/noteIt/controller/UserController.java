@@ -16,9 +16,11 @@ import com.sharp.noteIt.model.BorrowerDoc;
 import com.sharp.noteIt.model.BorrowerRequest;
 import com.sharp.noteIt.model.CustomerDoc;
 import com.sharp.noteIt.model.CustomerRequest;
+import com.sharp.noteIt.model.InterestRequest;
+import com.sharp.noteIt.model.InterestResponse;
 import com.sharp.noteIt.service.CustomerServiceI;
 
-@RestController
+@RestController("/api/borrowers/")
 public class UserController {
 
 	@Autowired
@@ -27,7 +29,7 @@ public class UserController {
 	@PostMapping("/register")
 	public ResponseEntity<?> saveCustomer(@RequestBody CustomerRequest request) {
 
-		CustomerDoc saveCustomer = service.saveCustomer(request);
+		CustomerDoc saveCustomer = this.service.saveCustomer(request);
 		return new ResponseEntity<>(saveCustomer, HttpStatus.CREATED);
 	}
 
@@ -45,6 +47,31 @@ public class UserController {
         return service.getCustomerProfile(firstName);
     }
 
-  
+	@PostMapping("/calinterest")
+    public InterestResponse calculateInterest(@RequestBody InterestRequest request) {
+        double principal = request.getPrincipal();
+        double interestRate = request.getInterestRate();
+        double interest = (principal * interestRate) / 100;
 
+        return new InterestResponse(interest);
+    }
+
+//	  @PostMapping("/{customerId}")
+//	    public ResponseEntity<BorrowerDoc> saveBorrower(@PathVariable Long customerId, @RequestBody BorrowerDoc borrower) {
+//	        return ResponseEntity.ok(service.saveBorrower(customerId, borrower));
+//	    }
+	
+	
+	    @PostMapping("/{customerId}/borrowers")
+	    public CustomerDoc addBorrowerToCustomer(@PathVariable Long customerId, @RequestBody BorrowerDoc borrowerDoc) {
+	        return this.service.addBorrowerToCustomer(customerId, borrowerDoc);
+	    }
+	    
+	    
+	    @GetMapping("/{customerId}/borrowers")
+	    public List<BorrowerRequest> getBorrowersForCustomer(@PathVariable Long customerId) {
+	        return this.service.getBorrowersForCustomer(customerId);
+	    }
+	    
 }
+

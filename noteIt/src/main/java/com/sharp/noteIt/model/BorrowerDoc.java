@@ -2,14 +2,19 @@ package com.sharp.noteIt.model;
 
 import java.util.Date;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
-@Table()
+@Table(name = "borrower")
 public class BorrowerDoc {
 
     @Id
@@ -25,6 +30,25 @@ public class BorrowerDoc {
     private String creditStatus;
     private Date borrowedDate;
     private Date endDate;
+    private String timePeriodUnit;
+    private Long timePeriodNumber;
+    
+//    borrowerName,
+//    phoneNumber,
+//    email,
+//    principalAmount,
+//    interestRate,
+//    creditBasis,
+//    creditStatus,
+//    timePeriodUnit,
+//    timePeriodNumber,
+//    borrowedDate,
+//    endDate,
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "customer_id")
+    @JsonBackReference
+    private CustomerDoc customerDoc;
     
 	public Long getId() {
 		return id;
@@ -85,6 +109,24 @@ public class BorrowerDoc {
 	}
 	public void setEndDate(Date endDate) {
 		this.endDate = endDate;
+	}
+	public CustomerDoc getCustomerDoc() {
+		return customerDoc;
+	}
+	public void setCustomerDoc(CustomerDoc customerDoc) {
+		this.customerDoc = customerDoc;
+	}
+	public String getTimePeriodUnit() {
+		return timePeriodUnit;
+	}
+	public void setTimePeriodUnit(String timePeriodUnit) {
+		this.timePeriodUnit = timePeriodUnit;
+	}
+	public Long getTimePeriodNumber() {
+		return timePeriodNumber;
+	}
+	public void setTimePeriodNumber(Long timePeriodNumber) {
+		this.timePeriodNumber = timePeriodNumber;
 	}
 
    
