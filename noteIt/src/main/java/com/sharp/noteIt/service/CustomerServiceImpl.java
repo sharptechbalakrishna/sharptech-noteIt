@@ -14,7 +14,6 @@ import com.sharp.noteIt.model.CustomerDoc;
 import com.sharp.noteIt.model.CustomerRequest;
 import com.sharp.noteIt.repo.BorrowerRepository;
 import com.sharp.noteIt.repo.CustomerRepository;
-import com.twilio.rest.api.v2010.account.Message;
 
 @Service
 public class CustomerServiceImpl implements CustomerServiceI {
