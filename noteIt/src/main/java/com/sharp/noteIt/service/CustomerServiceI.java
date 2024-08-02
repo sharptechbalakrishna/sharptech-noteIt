@@ -25,7 +25,7 @@ public interface CustomerServiceI {
 	Optional<CustomerDoc> findCustomerById(Long customerId);
     List<BorrowerRequest> getBorrowersForCustomer(Long customerId);
     SelfNotes save(SelfNotes note);
-	List<SelfNotes> getAllNotes();
+	//List<SelfNotes> getAllNotes();
 	// void sendSms(String to, String body);
 	Optional<LedgerCal> findById(Long ledgerId);
 	LedgerCal save(LedgerCal ledger);
@@ -45,4 +45,13 @@ public interface CustomerServiceI {
 	    void saveLedger(LedgerCal ledger);
 	    
 	    List<LedgerCal> findLedgersByBorrowerId(Long borrowerId);
+	    
+	    //self notes
+	    SelfNotes createOrUpdateSelfNote(Long customerId, SelfNotes selfNote);
+
+	    void deleteSelfNoteById(Long customerId, Integer noteId);
+
+	    List<SelfNotes> getNotesByCustomerId(Long customerId);
+
+	    SelfNotes getSelfNoteById(Long customerId, Integer noteId);
 }

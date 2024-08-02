@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -69,24 +70,59 @@ public class UserController {
 //	    }
 	
 	
-	    @PostMapping("/{customerId}/borrowers")
-	    public CustomerDoc addBorrowerToCustomer(@PathVariable Long customerId, @RequestBody BorrowerDoc borrowerDoc) {
-	        return this.service.addBorrowerToCustomer(customerId, borrowerDoc);
-	    }
-	    
+//	    @PostMapping("/{customerId}/borrowers")
+//	    public CustomerDoc addBorrowerToCustomer(@PathVariable Long customerId, @RequestBody BorrowerDoc borrowerDoc) {
+//	        return this.service.addBorrowerToCustomer(customerId, borrowerDoc);
+//	    }
+//	    @PostMapping("/{customerId}/borrowers")
+//	    public ResponseEntity<?> addBorrowerToCustomer(@PathVariable Long customerId, @RequestBody BorrowerDoc borrowerDoc) {
+//	        // Add borrower to the customer
+//	        BorrowerDoc addedBorrower = service.addBorrowerToCustomer(customerId, borrowerDoc);
+//	        
+//	        // Calculate ledger based on the added borrower
+//	        service.calculateAndCreateLedgerForBorrower(addedBorrower);
+//
+//	        return ResponseEntity.ok(addedBorrower);
+//	    }
 	    
 	    @GetMapping("/{customerId}/borrowers")
 	    public List<BorrowerRequest> getBorrowersForCustomer(@PathVariable Long customerId) {
 	        return this.service.getBorrowersForCustomer(customerId);
 	    }
 	    
-	    @PostMapping("/saveNotes")
-	    public SelfNotes createNote(@RequestBody SelfNotes note) {
-	        return this.service.save(note);
+	    //notes api's
+	    @PostMapping("/{customerId}/selfnotes")
+	    public ResponseEntity<SelfNotes> createOrUpdateSelfNote(
+	            @PathVariable Long customerId,
+	            @RequestBody SelfNotes selfNote) {
+	        SelfNotes savedSelfNote = this.service.createOrUpdateSelfNote(customerId, selfNote);
+	        return ResponseEntity.ok(savedSelfNote);
 	    }
-	    @GetMapping("/notesdisplay")
-	    public List<SelfNotes> getAllNotes() {
-	        return this.service.getAllNotes();
+
+	    @DeleteMapping("/{customerId}/selfnotes/{noteId}")
+	    public ResponseEntity<Void> deleteSelfNoteById(
+	            @PathVariable Long customerId,
+	            @PathVariable Integer noteId) {
+	    	this.service.deleteSelfNoteById(customerId, noteId);
+	        return ResponseEntity.noContent().build();
+	    }
+
+	    @GetMapping("/{customerId}/selfnotes")
+	    public ResponseEntity<List<SelfNotes>> getNotesByCustomerId(@PathVariable Long customerId) {
+	        List<SelfNotes> notes = this.service.getNotesByCustomerId(customerId);
+	        return ResponseEntity.ok(notes);
+	    }
+
+	    @GetMapping("/{customerId}/selfnotes/{noteId}")
+	    public ResponseEntity<SelfNotes> getSelfNoteById(
+	            @PathVariable Long customerId,
+	            @PathVariable Integer noteId) {
+	        SelfNotes selfNote = this.service.getSelfNoteById(customerId, noteId);
+	        if (selfNote != null) {
+	            return ResponseEntity.ok(selfNote);
+	        } else {
+	            return ResponseEntity.notFound().build();
+	        }
 	    }
 	    
 //       private final SmsService smsService1 = null;

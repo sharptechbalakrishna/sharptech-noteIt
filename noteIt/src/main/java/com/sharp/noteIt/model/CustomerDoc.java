@@ -49,9 +49,13 @@ public class CustomerDoc extends BaseDoc {
     @JoinColumn(name = "customer_id", referencedColumnName = "id")
     @JsonManagedReference
     private List<BorrowerDoc> borrowers;
-////    
-//   
     
+    @OneToMany(targetEntity = SelfNotes.class, cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JoinColumn(name = "customer_id",referencedColumnName = "id")
+    @JsonManagedReference
+    List<SelfNotes> selfnotes;
+   
+ 
     public Long getId() {
         return id;
     }

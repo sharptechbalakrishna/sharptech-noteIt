@@ -2,9 +2,15 @@ package com.sharp.noteIt.model;
 
 import java.util.Date;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
@@ -18,6 +24,11 @@ public class SelfNotes {
 	//private String createdBy;
 	private Date createdTs;
 	private Date updatedTs;
+	
+	@ManyToOne
+    @JoinColumn(name = "customer_id", nullable = false)
+	@JsonBackReference
+    private CustomerDoc customer;
 	
 	public Integer getId() {
 		return id;
@@ -49,6 +60,12 @@ public class SelfNotes {
 	}
 	public void setUpdatedTs(Date updatedTs) {
 		this.updatedTs = updatedTs;
+	}
+	public CustomerDoc getCustomer() {
+		return customer;
+	}
+	public void setCustomer(CustomerDoc customer) {
+		this.customer = customer;
 	}
 	
 	

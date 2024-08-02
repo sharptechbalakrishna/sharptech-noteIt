@@ -13,5 +13,6 @@ import com.sharp.noteIt.model.CustomerDoc;
 public interface CustomerRepository extends JpaRepository<CustomerDoc, Long>{
 	Optional<CustomerDoc> findByPhoneAndPassword(String phone, String password);
 	Optional<CustomerDoc> getCustomerByfirstName(String firstName);
+	Optional<CustomerDoc> findById(Long id);
 
 }

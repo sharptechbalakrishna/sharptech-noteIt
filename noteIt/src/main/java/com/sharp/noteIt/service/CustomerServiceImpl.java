@@ -159,21 +159,66 @@ public class CustomerServiceImpl implements CustomerServiceI {
             throw new RuntimeException("Customer not found");
         }
     }
-    
+//    
+//    @Autowired
+//    SelfNotesRepository selfNotesRepository;
+//    public SelfNotes save(SelfNotes note) {
+//    	SelfNotes notes = new  SelfNotes();
+//    	//notes.setCreatedBy(CustomerDoc.getUserName());
+//    	notes.setCreatedTs(new Date());
+//    	notes.setCreatedTs(new Date());
+//        return selfNotesRepository.save(note);
+//    }
+//    
+//    @Override
+//    public List<SelfNotes> getAllNotes() {
+//        return selfNotesRepository.findAll();
+//    }
     @Autowired
-    SelfNotesRepository selfNotesRepository;
-    public SelfNotes save(SelfNotes note) {
-    	SelfNotes notes = new  SelfNotes();
-    	//notes.setCreatedBy(CustomerDoc.getUserName());
-    	notes.setCreatedTs(new Date());
-    	notes.setCreatedTs(new Date());
-        return selfNotesRepository.save(note);
-    }
-    
+    private SelfNotesRepository selfNotesRepository;
+
     @Override
-    public List<SelfNotes> getAllNotes() {
-        return selfNotesRepository.findAll();
+    public SelfNotes createOrUpdateSelfNote(Long customerId, SelfNotes selfNote) {
+        Optional<CustomerDoc> customer = customerRepository.findById(customerId);
+        if (!customer.isPresent()) {
+            throw new RuntimeException("Customer not found with id " + customerId);
+        }
+
+        selfNote.setCustomer(customer.get());
+
+        if (selfNote.getId() != null) {
+            Optional<SelfNotes> existingNote = selfNotesRepository.findById(selfNote.getId());
+            if (existingNote.isPresent()) {
+                SelfNotes updatedNote = existingNote.get();
+                updatedNote.setNotes(selfNote.getNotes());
+                updatedNote.setTitle(selfNote.getTitle());
+                updatedNote.setUpdatedTs(new Date());
+                return selfNotesRepository.save(updatedNote);
+            }
+        }
+
+        selfNote.setCreatedTs(new Date());
+        selfNote.setUpdatedTs(new Date());
+        return selfNotesRepository.save(selfNote);
     }
+
+    @Override
+    public void deleteSelfNoteById(Long customerId, Integer noteId) {
+        // Optional: Check if the note belongs to the customer before deleting
+        selfNotesRepository.deleteById(noteId);
+    }
+
+    @Override
+    public List<SelfNotes> getNotesByCustomerId(Long customerId) {
+        return selfNotesRepository.findByCustomerId(customerId);
+    }
+
+    @Override
+    public SelfNotes getSelfNoteById(Long customerId, Integer noteId) {
+        Optional<SelfNotes> selfNote = selfNotesRepository.findById(noteId);
+        return selfNote.filter(note -> note.getCustomer().getId().equals(customerId)).orElse(null);
+    }
+
 	
 	
 //    @Value("${twilio.account.sid}")
@@ -553,10 +598,17 @@ public class CustomerServiceImpl implements CustomerServiceI {
         return ledgerRepository.findAllById((Iterable<Long>) borrowerDoc);
     }
 
+	@Override
+	public SelfNotes save(SelfNotes note) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 
-
-	  
-
+//	@Override
+//	public List<SelfNotes> getAllNotes() {
+//		// TODO Auto-generated method stub
+//		return null;
+//	}
 
 }
