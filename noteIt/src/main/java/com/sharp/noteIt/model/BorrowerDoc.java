@@ -32,18 +32,9 @@ public class BorrowerDoc {
     private Date endDate;
     private String timePeriodUnit;
     private Long timePeriodNumber;
+    private String status;
     
-//    borrowerName,
-//    phoneNumber,
-//    email,
-//    principalAmount,
-//    interestRate,
-//    creditBasis,
-//    creditStatus,
-//    timePeriodUnit,
-//    timePeriodNumber,
-//    borrowedDate,
-//    endDate,
+
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_id")
@@ -127,6 +118,12 @@ public class BorrowerDoc {
 	}
 	public void setTimePeriodNumber(Long timePeriodNumber) {
 		this.timePeriodNumber = timePeriodNumber;
+	}
+	public String getStatus() {
+		return status;
+	}
+	public void setStatus(String status) {
+		this.status = status;
 	}
 
    
