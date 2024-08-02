@@ -1,6 +1,7 @@
 package com.sharp.noteIt.repo;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -28,5 +29,12 @@ public interface LedgerRepository extends JpaRepository<LedgerCal, Long>{
     List<LedgerCal> findByBorrowerId(Long borrowerId);
 
 	LedgerCal findByMonthAndBorrower(String string, BorrowerDoc borrower);
+	
+	
+	 
+	 List<LedgerCal> findByBorrower(BorrowerDoc borrower);
+	    Optional<LedgerCal> findByBorrowerAndMonth(BorrowerDoc borrower, String month);
+	    LedgerCal findByBorrowerAndId(BorrowerDoc borrower, Long ledgerId);
+	   
 
 }
