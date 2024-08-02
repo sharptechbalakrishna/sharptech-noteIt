@@ -201,11 +201,15 @@ public class CustomerServiceImpl implements CustomerServiceI {
         selfNote.setUpdatedTs(new Date());
         return selfNotesRepository.save(selfNote);
     }
-
     @Override
     public void deleteSelfNoteById(Long customerId, Integer noteId) {
-        // Optional: Check if the note belongs to the customer before deleting
-        selfNotesRepository.deleteById(noteId);
+        System.out.println("Attempting to delete note with ID: " + noteId);
+        if (selfNotesRepository.existsById(noteId)) {
+            selfNotesRepository.deleteById(noteId);
+            System.out.println("Note deleted successfully.");
+        } else {
+            System.out.println("Note with ID " + noteId + " not found.");
+        }
     }
 
     @Override

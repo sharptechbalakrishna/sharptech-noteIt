@@ -10,4 +10,5 @@ import com.sharp.noteIt.model.SelfNotes;
 @Repository
 public interface SelfNotesRepository extends JpaRepository<SelfNotes, Integer>{
 	  List<SelfNotes> findByCustomerId(Long customerId);
+	  void deleteById(Integer noteId);
 }

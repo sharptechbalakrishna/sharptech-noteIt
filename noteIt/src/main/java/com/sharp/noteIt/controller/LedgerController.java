@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.sharp.noteIt.model.BorrowerDoc;
+import com.sharp.noteIt.model.BorrowerRequest;
 import com.sharp.noteIt.model.CustomerDoc;
 import com.sharp.noteIt.model.LedgerCal;
 import com.sharp.noteIt.model.LedgerUpdateRequest;
@@ -61,5 +62,9 @@ public class LedgerController {
         } else {
             return ResponseEntity.notFound().build();
         }
+    }
+    @GetMapping("/{customerId}/borrowers")
+    public List<BorrowerRequest> getBorrowersForCustomer(@PathVariable Long customerId) {
+        return ledgerService.getBorrowersForCustomer(customerId);
     }
 }

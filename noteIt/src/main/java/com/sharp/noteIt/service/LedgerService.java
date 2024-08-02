@@ -3,6 +3,7 @@ package com.sharp.noteIt.service;
 import java.util.List;
 
 import com.sharp.noteIt.model.BorrowerDoc;
+import com.sharp.noteIt.model.BorrowerRequest;
 import com.sharp.noteIt.model.CustomerDoc;
 import com.sharp.noteIt.model.LedgerCal;
 import com.sharp.noteIt.model.LedgerUpdateRequest;
@@ -14,5 +15,6 @@ public interface LedgerService {
 	    BorrowerDoc getBorrowerById(Long borrowerId);
 	    List<LedgerCal> getLedgerByBorrowerId(Long borrowerId);
 	    LedgerCal getLedgerByBorrowerAndLedgerId(Long borrowerId, Long ledgerId);
+		List<BorrowerRequest> getBorrowersForCustomer(Long customerId);
 
 }

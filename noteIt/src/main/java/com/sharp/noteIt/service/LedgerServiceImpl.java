@@ -5,11 +5,13 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.sharp.noteIt.model.BorrowerDoc;
+import com.sharp.noteIt.model.BorrowerRequest;
 import com.sharp.noteIt.model.CustomerDoc;
 import com.sharp.noteIt.model.LedgerCal;
 import com.sharp.noteIt.model.LedgerUpdateRequest;
@@ -237,5 +239,35 @@ public class LedgerServiceImpl implements LedgerService{
 	            throw new RuntimeException("Borrower not found");
 	        }
 	    }
+
+	    public List<BorrowerRequest> getBorrowersForCustomer(Long customerId) {
+	        Optional<CustomerDoc> customerOptional = customerRepository.findById(customerId);
+
+	        if (customerOptional.isPresent()) {
+	            CustomerDoc customer = customerOptional.get();
+	            return customer.getBorrowers().stream()
+	                    .map(borrower -> {
+	                        BorrowerRequest br = new BorrowerRequest();
+	                        br.setBorrowerName(borrower.getBorrowerName());
+	                        br.setPrincipalAmount(borrower.getPrincipalAmount());
+	                        br.setInterestRate(borrower.getInterestRate());
+	                        br.setStatus(borrower.getStatus());
+	                        br.setId(borrower.getId());
+	                        br.setBorrowedDate(borrower.getBorrowedDate());
+	                        br.setCreditBasis(borrower.getCreditBasis());
+	                        br.setCreditStatus(borrower.getCreditStatus());
+	                        br.setEmail(borrower.getEmail());
+	                        br.setEndDate(borrower.getEndDate());
+	                       br.setPhoneNumber(borrower.getPhoneNumber());
+	                       br.setTimePeriodNumber(borrower.getTimePeriodNumber());
+	                       br.setTimePeriodUnit(borrower.getTimePeriodUnit());
+	                        return br;
+	                    })
+	                    .collect(Collectors.toList());
+	        } else {
+	            throw new RuntimeException("Customer not found");
+	        }
+	    }		
+		
 
 }

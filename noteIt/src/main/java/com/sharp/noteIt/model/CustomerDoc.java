@@ -55,6 +55,11 @@ public class CustomerDoc extends BaseDoc {
     @JsonManagedReference
     List<SelfNotes> selfnotes;
    
+    
+    @OneToMany(targetEntity = ExpenseTracker.class, cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JoinColumn(name = "customer_id", referencedColumnName = "id")
+    @JsonManagedReference
+    private List<ExpenseTracker> expenseTracker;
  
     public Long getId() {
         return id;
@@ -119,6 +124,24 @@ public class CustomerDoc extends BaseDoc {
     public void setBorrowers(List<BorrowerDoc> borrowers) {
         this.borrowers = borrowers;
     }
+
+	public List<SelfNotes> getSelfnotes() {
+		return selfnotes;
+	}
+
+	public void setSelfnotes(List<SelfNotes> selfnotes) {
+		this.selfnotes = selfnotes;
+	}
+
+	public List<ExpenseTracker> getExpenseTracker() {
+		return expenseTracker;
+	}
+
+	public void setExpenseTracker(List<ExpenseTracker> expenseTracker) {
+		this.expenseTracker = expenseTracker;
+	}
+    
+    
 }
 
 
