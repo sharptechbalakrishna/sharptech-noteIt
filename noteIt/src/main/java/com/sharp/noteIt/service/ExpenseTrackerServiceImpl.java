@@ -11,6 +11,7 @@ import com.sharp.noteIt.repo.ExpenseTrackerRepository;
 
 import jakarta.transaction.Transactional;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -51,6 +52,9 @@ public class ExpenseTrackerServiceImpl implements ExpenseTrackerService {
         tracker.setSpentAmount(spentAmount);
         tracker.setTotal(tracker.getIncome() - tracker.getSpentAmount());
         tracker.setSavings(tracker.getTotal());
+        tracker.setCreatedBy(customer.getUserName());
+        tracker.setCreatedTs(new Date());
+        tracker.setUpdatedTs(new Date());
 
         return expenseTrackerRepository.save(tracker);
     }
@@ -132,6 +136,15 @@ public class ExpenseTrackerServiceImpl implements ExpenseTrackerService {
 
         return expenseTrackerRepository.save(tracker);
     }
+    
+    @Override
+    public Optional<ExpenseTracker> getExpenseTrackerByCustomerId(Long customerId) {
+        CustomerDoc customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new RuntimeException("Customer not found"));
+        
+        return expenseTrackerRepository.findByCustomer(customer);
+    }
+
 //    @Override
 //    public ExpenseTracker updateExpense(UpdateExpenseRequest request) {
 //        // Fetch the customer from the repository

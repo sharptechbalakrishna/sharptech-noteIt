@@ -16,6 +16,9 @@ public class SmsRequest {
 			this.message = message;
 		}
 		
-
+		 @Override
+		    public String toString() {
+		        return "SmsRequest{phoneNumber='" + phoneNumber + "', message='" + message + "'}";
+		    }
 
 }

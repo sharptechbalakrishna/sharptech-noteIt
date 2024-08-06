@@ -42,6 +42,9 @@ public class CustomerDoc extends BaseDoc {
 
     @Column
     private String password;
+    
+    @Column
+    private String image;
 
    
 
@@ -139,6 +142,14 @@ public class CustomerDoc extends BaseDoc {
 
 	public void setExpenseTracker(List<ExpenseTracker> expenseTracker) {
 		this.expenseTracker = expenseTracker;
+	}
+
+	public String getImage() {
+		return image;
+	}
+
+	public void setImage(String image) {
+		this.image = image;
 	}
     
     

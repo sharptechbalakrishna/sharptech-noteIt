@@ -1,5 +1,7 @@
 package com.sharp.noteIt.model;
 
+import java.io.Serializable;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -11,8 +13,8 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "ledger")
-public class LedgerCal {
-	
+public class LedgerCal implements Serializable{
+	private static final long serialVersionUID = 5356759213022980760L;
 	 @Id
 	    @GeneratedValue(strategy = GenerationType.IDENTITY)
 	    private Long id;

@@ -13,5 +13,6 @@ import com.sharp.noteIt.model.ExpenseTracker;
 public interface ExpenseTrackerRepository extends JpaRepository<ExpenseTracker, Long> {
     List<ExpenseTracker> findByCustomerId(Long customerId);
     Optional<ExpenseTracker> findByCustomer(CustomerDoc customer);
+   // Optional<ExpenseTracker> getExpenseTrackerByCustomerId(Long customerId);
 }
 

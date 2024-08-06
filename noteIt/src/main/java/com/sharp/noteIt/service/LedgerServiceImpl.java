@@ -31,11 +31,12 @@ public class LedgerServiceImpl implements LedgerService{
 
 	    @Autowired
 	    private LedgerRepository ledgerRepository;
-
+	    
 	
 	    public CustomerDoc addBorrowerToCustomer(Long customerId, BorrowerDoc borrowerDoc) {
 	        Optional<CustomerDoc> customerOptional = customerRepository.findById(customerId);
-
+	        //String message = "Dear " + borrowerDoc.getBorrowerName() + ", you have been added as a borrower.";
+	        //messageService.sendSms(borrowerDoc.getPhoneNumber(), message);
 	        if (customerOptional.isPresent()) {
 	            CustomerDoc customer = customerOptional.get();
 	            borrowerDoc.setCustomerDoc(customer);
@@ -50,6 +51,7 @@ public class LedgerServiceImpl implements LedgerService{
 	        } else {
 	            throw new RuntimeException("Customer not found");
 	        }
+	     
 	    }
 
 	    private void calculateAndGenerateInitialLedger(BorrowerDoc borrowerDoc) {

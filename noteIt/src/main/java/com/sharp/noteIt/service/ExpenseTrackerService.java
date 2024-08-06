@@ -14,4 +14,5 @@ public interface ExpenseTrackerService {
 //	    ExpenseTracker updateExpense(UpdateExpenseRequest request);
 //		ExpenseTracker updateExpense(Long customerId, Double income, Double spentAmount, String description);
 //
+	    Optional<ExpenseTracker> getExpenseTrackerByCustomerId(Long customerId);
 	    }

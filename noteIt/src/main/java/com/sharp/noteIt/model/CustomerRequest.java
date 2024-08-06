@@ -21,6 +21,7 @@ public class CustomerRequest implements Serializable{
 	private String lastName;
 	private String userName;
 	private List<BorrowerDoc> borrowers;
+	private String Image;
 
 	
 	public Long getId() {
@@ -70,6 +71,12 @@ public class CustomerRequest implements Serializable{
 	}
 	public void setBorrowers(List<BorrowerDoc> borrowers) {
 		this.borrowers = borrowers;
+	}
+	public String getImage() {
+		return Image;
+	}
+	public void setImage(String image) {
+		Image = image;
 	}
 	
 	

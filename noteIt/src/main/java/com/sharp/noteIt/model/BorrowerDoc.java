@@ -1,5 +1,6 @@
 package com.sharp.noteIt.model;
 
+import java.io.Serializable;
 import java.util.Date;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
@@ -15,8 +16,9 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "borrower")
-public class BorrowerDoc {
+public class BorrowerDoc implements Serializable{
 
+	 private static final long serialVersionUID = 5356759213022980760L;
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

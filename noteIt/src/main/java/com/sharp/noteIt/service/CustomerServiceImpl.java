@@ -53,7 +53,7 @@ public class CustomerServiceImpl implements CustomerServiceI {
 		doc.setCreatedBy(request.getUserName());
 		doc.setCreatedTs(new Date());
 		doc.setUpdatedTs(new Date());
-	
+		doc.setImage(request.getImage());
 		return doc;
 	}
 	
@@ -599,6 +599,7 @@ public class CustomerServiceImpl implements CustomerServiceI {
     public List<LedgerCal> findLedgersByBorrowerId(Long borrowerId) {
         BorrowerDoc borrowerDoc = borrowerRepository.findById(borrowerId)
                 .orElseThrow(() -> new RuntimeException("Borrower not found"));
+        
         return ledgerRepository.findAllById((Iterable<Long>) borrowerDoc);
     }
 

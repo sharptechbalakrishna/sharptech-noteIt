@@ -1,5 +1,8 @@
 package com.sharp.noteIt.model;
 
+import java.io.Serializable;
+import java.util.Date;
+
 import com.fasterxml.jackson.annotation.JsonBackReference;
 
 import jakarta.persistence.Column;
@@ -14,7 +17,8 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "expensetracker")
-public class ExpenseTracker {
+public class ExpenseTracker implements Serializable{
+	private static final long serialVersionUID = 5356759213022980760L;
 	
 	@Id  
 	@GeneratedValue(strategy = GenerationType.AUTO)
@@ -39,7 +43,10 @@ public class ExpenseTracker {
     @JoinColumn(name = "customer_id")
     @JsonBackReference // Ensure this annotation matches your use case
     private CustomerDoc customer;
-
+    
+    private String createdBy;
+    private Date createdTs;
+    private Date updatedTs;
 
 	public Long getId() {
 		return id;
@@ -85,4 +92,23 @@ public class ExpenseTracker {
 	public void setDescription(String description) {
 		this.description = description;
 	}
+	public String getCreatedBy() {
+		return createdBy;
+	}
+	public void setCreatedBy(String createdBy) {
+		this.createdBy = createdBy;
+	}
+	public Date getCreatedTs() {
+		return createdTs;
+	}
+	public void setCreatedTs(Date createdTs) {
+		this.createdTs = createdTs;
+	}
+	public Date getUpdatedTs() {
+		return updatedTs;
+	}
+	public void setUpdatedTs(Date updatedTs) {
+		this.updatedTs = updatedTs;
+	}
+	
 }
