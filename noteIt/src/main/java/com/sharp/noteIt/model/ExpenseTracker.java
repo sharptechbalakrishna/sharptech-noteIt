@@ -1,10 +1,14 @@
 package com.sharp.noteIt.model;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -13,41 +17,62 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "expensetracker")
 public class ExpenseTracker implements Serializable{
-	private static final long serialVersionUID = 5356759213022980760L;
-	
-	@Id  
-	@GeneratedValue(strategy = GenerationType.AUTO)
-    private Long id;
+	 private static final long serialVersionUID = 5356759213022980760L;
 
-    @Column(name = "description") // Use lowercase naming
-    private String description;
+	 @Id
+	    @GeneratedValue(strategy = GenerationType.AUTO)
+	    private Long id;
 
-    @Column(name = "income")
-    private Double income;
+	    @Column(name = "description")
+	    private String description;
 
-    @Column(name = "spent_amount")
-   private Double spentAmount;
+	    @Column(name = "income")
+	    private Double income;
 
-    @Column(name = "total")
-    private Double total;
+	    @Column(name = "spent_amount")
+	    private Double spentAmount;
 
-    @Column(name = "savings")
-    private Double savings;
+	    @Column(name = "total")
+	    private Double total;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "customer_id")
-    @JsonBackReference // Ensure this annotation matches your use case
-    private CustomerDoc customer;
-    
-    private String createdBy;
-    private Date createdTs;
-    private Date updatedTs;
+	    @Column(name = "savings")
+	    private Double savings;
 
+	    @OneToMany(mappedBy = "expenseTracker", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+	    @JsonManagedReference
+	    private List<ExpenseTransaction> transactions = new ArrayList<>();
+
+	    @ManyToOne(fetch = FetchType.LAZY)
+	    @JoinColumn(name = "customer_id",nullable = false)
+	    @JsonBackReference
+	    private CustomerDoc customer;
+
+	    @Column(name = "created_by")
+	    private String createdBy;
+
+	    @Column(name = "created_ts")
+	    private Date createdTs;
+
+	    @Column(name = "updated_ts")
+	    private Date updatedTs;
+	    // Getters and setters
+
+	    public void addTransaction(ExpenseTransaction transaction) {
+	        this.transactions.add(transaction);
+	        transaction.setExpenseTracker(this);
+	        updateTotals();
+	    }
+
+	    public void updateTotals() {
+	        this.total = this.income - this.spentAmount;
+	        this.savings = this.total;
+	    }
 	public Long getId() {
 		return id;
 	}
@@ -110,5 +135,15 @@ public class ExpenseTracker implements Serializable{
 	public void setUpdatedTs(Date updatedTs) {
 		this.updatedTs = updatedTs;
 	}
+	public List<ExpenseTransaction> getTransactions() {
+		return transactions;
+	}
+	public void setTransactions(List<ExpenseTransaction> transactions) {
+		this.transactions = transactions;
+	}
+	
+
+	
+
 	
 }

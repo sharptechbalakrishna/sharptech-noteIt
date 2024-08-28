@@ -2,15 +2,14 @@ package com.sharp.noteIt.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import com.sharp.noteIt.model.CustomerDoc;
 import com.sharp.noteIt.model.ExpenseTracker;
-import com.sharp.noteIt.model.UpdateExpenseRequest;
+import com.sharp.noteIt.model.ExpenseTransaction;
 import com.sharp.noteIt.repo.CustomerRepository;
 import com.sharp.noteIt.repo.ExpenseTrackerRepository;
+import com.sharp.noteIt.repo.ExpenseTransactionRepository;
 
 import jakarta.transaction.Transactional;
-
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -18,18 +17,21 @@ import java.util.Optional;
 @Service
 @Transactional
 public class ExpenseTrackerServiceImpl implements ExpenseTrackerService {
-	@Autowired
+	
+    @Autowired
     private ExpenseTrackerRepository expenseTrackerRepository;
 
     @Autowired
     private CustomerRepository customerRepository;
-
+    
+    @Autowired
+    private ExpenseTransactionRepository expenseTransactionRepository;
     @Override
     public Optional<ExpenseTracker> findByCustomer(CustomerDoc customer) {
         return expenseTrackerRepository.findByCustomer(customer);
     }
 
-    public ExpenseTracker addIncome(Long customerId, Double income, String description,Double spentAmount) {
+    public ExpenseTracker addIncome(Long customerId, Double income, String description, Double spentAmount) {
         CustomerDoc customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> new RuntimeException("Customer not found"));
 
@@ -37,71 +39,66 @@ public class ExpenseTrackerServiceImpl implements ExpenseTrackerService {
                 .orElseGet(() -> {
                     ExpenseTracker newTracker = new ExpenseTracker();
                     newTracker.setCustomer(customer);
+                    newTracker.setIncome(0.0);
+                    newTracker.setSpentAmount(0.0);
                     return newTracker;
                 });
 
-        if (tracker.getIncome() == null) {
-            tracker.setIncome(0.0);
-        }
-        if (tracker.getSpentAmount() == null) {
-            tracker.setSpentAmount(0.0);
-        }
-
-        tracker.setIncome(tracker.getIncome() + income);
+        tracker.setIncome(tracker.getIncome() + (income != null ? income : 0.0));
         tracker.setDescription(description);
-        tracker.setSpentAmount(spentAmount);
+        tracker.setSpentAmount(tracker.getSpentAmount() + (spentAmount != null ? spentAmount : 0.0));
         tracker.setTotal(tracker.getIncome() - tracker.getSpentAmount());
         tracker.setSavings(tracker.getTotal());
         tracker.setCreatedBy(customer.getUserName());
         tracker.setCreatedTs(new Date());
         tracker.setUpdatedTs(new Date());
 
+        // Add transaction
+        ExpenseTransaction transaction = new ExpenseTransaction();
+        transaction.setDescription(description);
+        transaction.setIncome(income);
+        transaction.setSpentAmount(spentAmount);     
+        transaction.setCreatedTs(tracker.getCreatedTs());
+        transaction.setUpdatedTs(tracker.getUpdatedTs());
+        
+
+        tracker.addTransaction(transaction);
+
         return expenseTrackerRepository.save(tracker);
     }
 
     public ExpenseTracker addSpentAmount(Long customerId, Double spentAmount, String description) {
-        // Fetch the customer or throw an exception if not found
         CustomerDoc customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> new RuntimeException("Customer not found"));
 
-        // Find existing tracker or create a new one
         ExpenseTracker tracker = expenseTrackerRepository.findByCustomer(customer)
                 .orElseGet(() -> {
                     ExpenseTracker newTracker = new ExpenseTracker();
                     newTracker.setCustomer(customer);
-                    newTracker.setIncome(0.0); // Initialize income if needed
-                    newTracker.setSpentAmount(0.0); // Initialize spentAmount if needed
+                    newTracker.setIncome(0.0);
+                    newTracker.setSpentAmount(0.0);
+                    newTracker.setCreatedTs(new Date()); // Initialize creation timestamp
+                    newTracker.setUpdatedTs(new Date()); // Initialize update timestamp
                     return newTracker;
                 });
 
-        // Print current values for debugging
-        System.out.println("Current spentAmount: " + tracker.getSpentAmount());
-        System.out.println("Amount to add: " + spentAmount);
-
-        // Ensure spentAmount is not null and update it
-        if (spentAmount != null) {
-            tracker.setSpentAmount(tracker.getSpentAmount() + spentAmount);
-        } else {
-            System.out.println("Spent amount provided is null.");
-        }
-
-        // Update other fields
+        tracker.setSpentAmount(tracker.getSpentAmount() + (spentAmount != null ? spentAmount : 0.0));
         tracker.setDescription(description);
         tracker.setTotal(tracker.getIncome() - tracker.getSpentAmount());
         tracker.setSavings(tracker.getTotal());
-        tracker.setSpentAmount(spentAmount);
+        tracker.setUpdatedTs(new Date()); // Update the timestamp
 
-        // Print updated values for debugging
-        System.out.println("Updated spentAmount: " + tracker.getSpentAmount());
-        System.out.println("Updated total: " + tracker.getTotal());
+        // Add transaction
+        ExpenseTransaction transaction = new ExpenseTransaction();
+        transaction.setDescription(description);
+        transaction.setSpentAmount(spentAmount);
+        //transaction.setTransactionDate(tracker.getCreatedTs()); // Use createdTs from ExpenseTracker
+        transaction.setCreatedTs(tracker.getCreatedTs());
+        transaction.setUpdatedTs(tracker.getUpdatedTs());
 
-        // Save the updated tracker to the repository
-        ExpenseTracker updatedTracker = expenseTrackerRepository.save(tracker);
+        tracker.addTransaction(transaction);
 
-        // Print the saved tracker for confirmation
-        System.out.println("Saved tracker: " + updatedTracker);
-
-        return updatedTracker;
+        return expenseTrackerRepository.save(tracker);
     }
 
     public ExpenseTracker updateExpense(Long customerId, Double income, Double spentAmount, String description) {
@@ -112,38 +109,55 @@ public class ExpenseTrackerServiceImpl implements ExpenseTrackerService {
                 .orElseGet(() -> {
                     ExpenseTracker newTracker = new ExpenseTracker();
                     newTracker.setCustomer(customer);
+                    newTracker.setIncome(0.0);
+                    newTracker.setSpentAmount(0.0);
                     return newTracker;
                 });
 
         if (income != null) {
-            if (tracker.getIncome() == null) {
-                tracker.setIncome(0.0);
-            }
             tracker.setIncome(tracker.getIncome() + income);
         }
 
         if (spentAmount != null) {
-            if (tracker.getSpentAmount() == null) {
-                tracker.setSpentAmount(0.0);
-            }
             tracker.setSpentAmount(tracker.getSpentAmount() + spentAmount);
         }
 
         tracker.setDescription(description);
         tracker.setTotal(tracker.getIncome() - tracker.getSpentAmount());
         tracker.setSavings(tracker.getTotal());
-        tracker.setSpentAmount(spentAmount);
 
         return expenseTrackerRepository.save(tracker);
     }
-    
+
     @Override
     public Optional<ExpenseTracker> getExpenseTrackerByCustomerId(Long customerId) {
         CustomerDoc customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> new RuntimeException("Customer not found"));
-        
+
         return expenseTrackerRepository.findByCustomer(customer);
     }
+    
+    
+
+  
+
+    @Override
+    public List<ExpenseTransaction> getTransactionHistory(Long expenseTrackerId) {
+        return expenseTransactionRepository.findByExpenseTracker_Id(expenseTrackerId);
+    }
+    
+    
+    @Override
+    public void deleteTransaction(Long transactionId, Long customerId) {
+        // Verify the customer exists
+        CustomerDoc customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new RuntimeException("Customer not found"));
+
+        // Delete the transaction if it exists and belongs to the customer
+        expenseTransactionRepository.deleteByIdAndExpenseTracker_Customer_Id(transactionId, customerId);
+    }
+}
+
 
 //    @Override
 //    public ExpenseTracker updateExpense(UpdateExpenseRequest request) {
@@ -181,5 +195,5 @@ public class ExpenseTrackerServiceImpl implements ExpenseTrackerService {
 //    }
 
 
-}
+
 

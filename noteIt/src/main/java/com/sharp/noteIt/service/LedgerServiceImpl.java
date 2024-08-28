@@ -217,6 +217,15 @@ public class LedgerServiceImpl implements LedgerService{
 	    }
 
 	    
+//	    @Transactional
+//	    public void deleteBorrowersByCustomerId(Long customerId ) {
+//	        // Check if the customer exists
+//	        if (customerRepository.existsById(customerId)) {
+//	            borrowerRepository.deleteByCustomerDoc_Id(customerId);
+//	        } else {
+//	            throw new RuntimeException("Customer not found with id: " + customerId);
+//	        }
+//	    }
 	    
 	    @Override
 	    public BorrowerDoc getBorrowerById(Long borrowerId) {
@@ -270,6 +279,16 @@ public class LedgerServiceImpl implements LedgerService{
 	            throw new RuntimeException("Customer not found");
 	        }
 	    }		
-		
+	    @Override
+	    @Transactional
+	    public void deleteLedgerByBorrowerId(Long borrowerId, Long ledgerId) {
+	        // Find the ledger entry by borrower ID and ledger ID
+	        LedgerCal ledger = ledgerRepository.findByIdAndBorrowerId(ledgerId, borrowerId)
+	                .orElseThrow(() -> new IllegalArgumentException("Ledger entry not found for the given borrower"));
+
+	        // Delete the ledger entry
+	        ledgerRepository.delete(ledger);
+	    }
+
 
 }

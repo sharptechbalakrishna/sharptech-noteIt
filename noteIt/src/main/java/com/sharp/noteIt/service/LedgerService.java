@@ -16,5 +16,10 @@ public interface LedgerService {
 	    List<LedgerCal> getLedgerByBorrowerId(Long borrowerId);
 	    LedgerCal getLedgerByBorrowerAndLedgerId(Long borrowerId, Long ledgerId);
 		List<BorrowerRequest> getBorrowersForCustomer(Long customerId);
-
+		 /**
+	     * Delete a ledger entry by its ID and associated borrower ID.
+	     * @param borrowerId The ID of the borrower.
+	     * @param ledgerId The ID of the ledger entry to be deleted.
+	     */
+	    void deleteLedgerByBorrowerId(Long borrowerId, Long ledgerId);
 }

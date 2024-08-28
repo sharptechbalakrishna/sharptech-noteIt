@@ -2,6 +2,8 @@ package com.sharp.noteIt.model;
 
 import java.io.Serializable;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -29,7 +31,8 @@ public class LedgerCal implements Serializable{
 	    private boolean locked;
 
 	    @ManyToOne(fetch = FetchType.LAZY)
-	    @JoinColumn(name = "borrower_id")
+	    @JoinColumn(name = "borrower_id",nullable = false)
+	    @JsonManagedReference
 	    private BorrowerDoc borrower;
 
 		public Long getId() {

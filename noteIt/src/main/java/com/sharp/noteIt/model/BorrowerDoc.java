@@ -39,7 +39,7 @@ public class BorrowerDoc implements Serializable{
 
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "customer_id")
+    @JoinColumn(name = "customer_id",nullable = false)
     @JsonBackReference
     private CustomerDoc customerDoc;
     

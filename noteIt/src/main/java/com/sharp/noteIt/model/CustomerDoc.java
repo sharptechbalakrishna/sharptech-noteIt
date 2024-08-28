@@ -45,21 +45,32 @@ public class CustomerDoc extends BaseDoc {
     
     @Column
     private String image;
+    
+    @Column
+    private String role;
 
    
 
-    @OneToMany(targetEntity = BorrowerDoc.class, cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    public String getRole() {
+		return role;
+	}
+
+	public void setRole(String role) {
+		this.role = role;
+	}
+
+	@OneToMany(targetEntity = BorrowerDoc.class, cascade = CascadeType.ALL, fetch = FetchType.EAGER,orphanRemoval = true)
     @JoinColumn(name = "customer_id", referencedColumnName = "id")
     @JsonManagedReference
     private List<BorrowerDoc> borrowers;
     
-    @OneToMany(targetEntity = SelfNotes.class, cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToMany(targetEntity = SelfNotes.class, cascade = CascadeType.ALL, fetch = FetchType.EAGER,orphanRemoval = true)
     @JoinColumn(name = "customer_id",referencedColumnName = "id")
     @JsonManagedReference
     List<SelfNotes> selfnotes;
    
     
-    @OneToMany(targetEntity = ExpenseTracker.class, cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToMany(targetEntity = ExpenseTracker.class, cascade = CascadeType.ALL, fetch = FetchType.EAGER,orphanRemoval = true)
     @JoinColumn(name = "customer_id", referencedColumnName = "id")
     @JsonManagedReference
     private List<ExpenseTracker> expenseTracker;

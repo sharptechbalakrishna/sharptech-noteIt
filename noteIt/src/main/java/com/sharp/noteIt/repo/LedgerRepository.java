@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import com.sharp.noteIt.model.BorrowerDoc;
+import com.sharp.noteIt.model.CustomerDoc;
 import com.sharp.noteIt.model.LedgerCal;
 
 @Repository
@@ -36,5 +37,10 @@ public interface LedgerRepository extends JpaRepository<LedgerCal, Long>{
 	    Optional<LedgerCal> findByBorrowerAndMonth(BorrowerDoc borrower, String month);
 	    LedgerCal findByBorrowerAndId(BorrowerDoc borrower, Long ledgerId);
 	   
+	    //void deleteByBorrowerId(Long borrowerId);
+	    void deleteById(Long id);
+	    void deleteByBorrowerId(Long borrowerId);
 
+	    Optional<LedgerCal> findByIdAndBorrowerId(Long id, Long borrowerId);
+	    void deleteByBorrower(BorrowerDoc borrower);
 }

@@ -1,9 +1,11 @@
 package com.sharp.noteIt.service;
 
+import java.util.List;
 import java.util.Optional;
 
 import com.sharp.noteIt.model.CustomerDoc;
 import com.sharp.noteIt.model.ExpenseTracker;
+import com.sharp.noteIt.model.ExpenseTransaction;
 import com.sharp.noteIt.model.UpdateExpenseRequest;
 
 public interface ExpenseTrackerService {
@@ -15,4 +17,11 @@ public interface ExpenseTrackerService {
 //		ExpenseTracker updateExpense(Long customerId, Double income, Double spentAmount, String description);
 //
 	    Optional<ExpenseTracker> getExpenseTrackerByCustomerId(Long customerId);
+		List<ExpenseTransaction> getTransactionHistory(Long id);
+		
+//		 ExpenseTracker getExpenseTrackerByCustomerId(Long customerId);
+//		    List<ExpenseTransaction> getExpenseTransactionsByExpenseTrackerId(Long expenseTrackerId);
+//		    ExpenseTracker createOrUpdateExpenseTracker(ExpenseTrackerRequest request);
+		
+		 void deleteTransaction(Long transactionId, Long customerId);
 	    }

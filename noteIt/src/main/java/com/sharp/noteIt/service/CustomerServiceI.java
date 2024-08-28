@@ -11,12 +11,16 @@ import com.sharp.noteIt.model.LedgerCal;
 import com.sharp.noteIt.model.LedgerUpdateRequest;
 import com.sharp.noteIt.model.SelfNotes;
 
+import jakarta.transaction.Transactional;
+
 public interface CustomerServiceI {
 
 	public CustomerDoc saveCustomer(CustomerRequest request);
 	public CustomerDoc login(String phone, String password);
+	//deleting borrower by customerid
+	 void deleteBorrowerById(Long customerId, Long borrowerId);
 	//public CustomerDoc profile(CustomerRequest request);
-	public CustomerDoc getCustomerProfile(String firstName);
+	public CustomerDoc getCustomerProfile(Long id);
 	public  List<CustomerDoc> getAllCustomers();
 	//public   List<BorrowerDoc> saveBorrower(BorrowerRequest brequest);
 
@@ -34,7 +38,7 @@ public interface CustomerServiceI {
 	 void calculateLedgerForCurrentMonth(Long borrowerId);
 	    void updateInterestPaid(LedgerUpdateRequest request);
 	    
-	    
+	    CustomerDoc getCustomerById(Long customerId);
 	    
 	    //fridat api
 	    
@@ -54,4 +58,10 @@ public interface CustomerServiceI {
 	    List<SelfNotes> getNotesByCustomerId(Long customerId);
 
 	    SelfNotes getSelfNoteById(Long customerId, Integer noteId);
+	    
+	    //deleting the customer data
+	    //void deleteCustomerById(Long customerId);
+	    //void deleteCustomerById(Long id);
+	    @Transactional
+	    void deleteCustomerById(Long customerId);
 }

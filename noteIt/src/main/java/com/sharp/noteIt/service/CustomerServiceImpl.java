@@ -1,10 +1,12 @@
 package com.sharp.noteIt.service;
 
 import java.text.SimpleDateFormat;
+import java.util.NoSuchElementException;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -15,11 +17,14 @@ import com.sharp.noteIt.model.BorrowerDoc;
 import com.sharp.noteIt.model.BorrowerRequest;
 import com.sharp.noteIt.model.CustomerDoc;
 import com.sharp.noteIt.model.CustomerRequest;
+import com.sharp.noteIt.model.ExpenseTracker;
+import com.sharp.noteIt.model.ExpenseTransaction;
 import com.sharp.noteIt.model.LedgerCal;
 import com.sharp.noteIt.model.LedgerUpdateRequest;
 import com.sharp.noteIt.model.SelfNotes;
 import com.sharp.noteIt.repo.BorrowerRepository;
 import com.sharp.noteIt.repo.CustomerRepository;
+import com.sharp.noteIt.repo.ExpenseTrackerRepository;
 import com.sharp.noteIt.repo.LedgerRepository;
 import com.sharp.noteIt.repo.SelfNotesRepository;
 import com.twilio.rest.api.v2010.account.Message;
@@ -29,33 +34,77 @@ import jakarta.transaction.Transactional;
 import lombok.Value;
 
 @Service
+@Transactional
 public class CustomerServiceImpl implements CustomerServiceI {
 
 	@Autowired
 	CustomerRepository repo;
 
+//	@Override
+//	public CustomerDoc saveCustomer(CustomerRequest request) {
+//		CustomerDoc convertPojoToEntity = convertPojoToEntity(request);
+//		return repo.save(convertPojoToEntity);
+//
+//	}
+//
+//	private CustomerDoc convertPojoToEntity(CustomerRequest request) {
+//		CustomerDoc doc = new CustomerDoc();
+//		doc.setId(request.getId());
+//		doc.setEmail(request.getEmail());
+//		doc.setFirstName(request.getFirstName());
+//		doc.setLastName(request.getLastName());
+//		doc.setUserName(request.getUserName());
+//		doc.setPhone(request.getPhone());
+//		doc.setPassword(request.getPassword());
+//		doc.setCreatedBy(request.getUserName());
+//		doc.setCreatedTs(new Date());
+//		doc.setUpdatedTs(new Date());
+//		doc.setImage(request.getImage());
+//		return doc;
+//	}
+	
+	
 	@Override
 	public CustomerDoc saveCustomer(CustomerRequest request) {
-		CustomerDoc convertPojoToEntity = convertPojoToEntity(request);
-		return repo.save(convertPojoToEntity);
+	    if (request.getId() != null) {
+	        // Update existing customer
+	        CustomerDoc existingCustomer = repo.findById(request.getId())
+	        		.orElseThrow(() -> new NoSuchElementException("Customer not found with id " + request.getId()));
 
+	        // Update fields if they are not null
+	        if (request.getEmail() != null) existingCustomer.setEmail(request.getEmail());
+	        if (request.getFirstName() != null) existingCustomer.setFirstName(request.getFirstName());
+	        if (request.getLastName() != null) existingCustomer.setLastName(request.getLastName());
+	        if (request.getUserName() != null) existingCustomer.setUserName(request.getUserName());
+	        if (request.getPhone() != null) existingCustomer.setPhone(request.getPhone());
+	        if (request.getPassword() != null) existingCustomer.setPassword(request.getPassword());
+	        if (request.getImage() != null) existingCustomer.setImage(request.getImage());
+	        existingCustomer.setUpdatedTs(new Date()); // Update timestamp
+
+	        return repo.save(existingCustomer);
+	    } else {
+	        // Create new customer
+	        CustomerDoc newCustomer = convertPojoToEntity(request);
+	        newCustomer.setCreatedTs(new Date()); // Set created timestamp
+	        newCustomer.setUpdatedTs(new Date()); // Set updated timestamp
+
+	        return repo.save(newCustomer);
+	    }
 	}
 
 	private CustomerDoc convertPojoToEntity(CustomerRequest request) {
-		CustomerDoc doc = new CustomerDoc();
-		doc.setId(request.getId());
-		doc.setEmail(request.getEmail());
-		doc.setFirstName(request.getFirstName());
-		doc.setLastName(request.getLastName());
-		doc.setUserName(request.getUserName());
-		doc.setPhone(request.getPhone());
-		doc.setPassword(request.getPassword());
-		doc.setCreatedBy(request.getUserName());
-		doc.setCreatedTs(new Date());
-		doc.setUpdatedTs(new Date());
-		doc.setImage(request.getImage());
-		return doc;
+	    CustomerDoc doc = new CustomerDoc();
+	    doc.setEmail(request.getEmail());
+	    doc.setFirstName(request.getFirstName());
+	    doc.setLastName(request.getLastName());
+	    doc.setUserName(request.getUserName());
+	    doc.setPhone(request.getPhone());
+	    doc.setPassword(request.getPassword());
+	    doc.setImage(request.getImage());
+	    return doc;
 	}
+	
+	
 	
 	
 
@@ -66,8 +115,8 @@ public class CustomerServiceImpl implements CustomerServiceI {
 	}
 
 	@Override
-	public CustomerDoc getCustomerProfile(String firstName) {
-		return repo.getCustomerByfirstName(firstName).orElseThrow(() -> new IllegalArgumentException("Customer not found"));
+	public CustomerDoc getCustomerProfile(Long id) {
+		return repo.getCustomerById(id).orElseThrow(() -> new IllegalArgumentException("Customer not found"));
 	}
 
 	@Override
@@ -159,6 +208,21 @@ public class CustomerServiceImpl implements CustomerServiceI {
             throw new RuntimeException("Customer not found");
         }
     }
+    
+    @Transactional
+    public void deleteBorrowerById(Long customerId, Long borrowerId) {
+        // Fetch the borrower to ensure it belongs to the customer
+        Optional<BorrowerDoc> optionalBorrower = borrowerRepository.findByIdAndCustomerId(borrowerId, customerId);
+        
+        BorrowerDoc borrower = optionalBorrower
+                .orElseThrow(() -> new IllegalArgumentException("Borrower not found for this customer"));
+
+        // Manually delete associated ledger entries for this borrower
+        ledgerRepository.deleteByBorrowerId(borrowerId);
+
+        // Now delete the borrower
+        borrowerRepository.delete(borrower);
+    }
 //    
 //    @Autowired
 //    SelfNotesRepository selfNotesRepository;
@@ -202,16 +266,18 @@ public class CustomerServiceImpl implements CustomerServiceI {
         return selfNotesRepository.save(selfNote);
     }
     @Override
+    @Transactional
     public void deleteSelfNoteById(Long customerId, Integer noteId) {
         System.out.println("Attempting to delete note with ID: " + noteId);
         if (selfNotesRepository.existsById(noteId)) {
             selfNotesRepository.deleteById(noteId);
+            selfNotesRepository.flush(); // Ensure changes are committed
             System.out.println("Note deleted successfully.");
         } else {
             System.out.println("Note with ID " + noteId + " not found.");
         }
     }
-
+    
     @Override
     public List<SelfNotes> getNotesByCustomerId(Long customerId) {
         return selfNotesRepository.findByCustomerId(customerId);
@@ -609,11 +675,142 @@ public class CustomerServiceImpl implements CustomerServiceI {
 		return null;
 	}
 
+	
+
+    @Autowired
+    private ExpenseTrackerRepository expenseTrackerRepository;
+
+//    @Override
+//    @Transactional
+//    public void deleteCustomerById(Long customerId) {
+//        // Ensure customer exists
+//        CustomerDoc customer = customerRepository.findById(customerId)
+//                .orElseThrow(() -> new IllegalArgumentException("Customer not found with id: " + customerId));
+//
+//        // Delete associated data
+//        borrowerRepository.deleteAllByCustomerId(customerId);
+//        selfNotesRepository.deleteAllByCustomerId(customerId);
+//        expenseTrackerRepository.deleteAllByCustomerId(customerId);
+//
+//        // Delete the customer
+//        customerRepository.delete(customer);
+//    }
+//    @Transactional
+//    @Override
+//    public void deleteCustomerById(Long id) {
+//        CustomerDoc customer = customerRepository.findById(id)
+//            .orElseThrow(() -> new RuntimeException("Customer not found"));
+//
+//        // Delete related entities
+//        for (BorrowerDoc borrower : customer.getBorrowers()) {
+//            borrowerRepository.delete(borrower);
+//        }
+//        for (SelfNotes note : customer.getSelfnotes()) {
+//            selfNotesRepository.delete(note);
+//        }
+//        for (ExpenseTracker expense : customer.getExpenseTracker()) {
+//            expenseTrackerRepository.delete(expense);
+//        }
+//
+//        // Finally, delete the customer
+//        customerRepository.deleteById(id);
+//    }
+    
+//    @Transactional
+//    @Override
+//    public void deleteCustomerById(Long id) {
+//        CustomerDoc customer = customerRepository.findById(id)
+//            .orElseThrow(() -> new RuntimeException("Customer not found"));
+//
+//        // Clear the associations in the related entities
+//        customer.getBorrowers().forEach(borrower -> borrower.setCustomerDoc(null));
+//        customer.getSelfnotes().forEach(note -> note.setCustomer(null));
+//        customer.getExpenseTracker().forEach(expense -> expense.setCustomer(null));
+//
+//        // Remove customer associations from the lists
+//        customer.getBorrowers().clear();
+//        customer.getSelfnotes().clear();
+//        customer.getExpenseTracker().clear();
+//
+//        // Delete the customer
+//        customerRepository.deleteById(id);
+//    }
+//    @Transactional
+//    @Override
+//    public void deleteCustomerById(Long customerId) {
+//        // Retrieve the customer by ID
+//        CustomerDoc customer = customerRepository.findById(customerId)
+//            .orElseThrow(() -> new RuntimeException("Customer not found"));
+//
+//        // Delete all related Borrowers
+//        if (customer.getBorrowers() != null) {
+//            borrowerRepository.deleteAll(customer.getBorrowers());
+//            System.out.println("delete success1");
+//        }
+//
+//        // Delete all related SelfNotes
+//        if (customer.getSelfnotes() != null) {
+//            selfNotesRepository.deleteAll(customer.getSelfnotes());
+//            System.out.println("delete success2");
+//        }
+//
+//        // Delete all related ExpenseTrackers
+//        if (customer.getExpenseTracker() != null) {
+//            expenseTrackerRepository.deleteAll(customer.getExpenseTracker());
+//            System.out.println("delete success3");
+//        }
+//
+//        // Now, delete the customer itself
+//        customerRepository.delete(customer);
+//    }
+    
+    @Transactional
+    public void deleteCustomerById(Long customerId) {
+        // Fetch the customer
+        CustomerDoc customer = customerRepository.findById(customerId)
+            .orElseThrow(() -> new RuntimeException("Customer not found"));
+
+        // Delete Ledger Entries associated with Borrowers first
+        List<BorrowerDoc> borrowers = customer.getBorrowers();
+        for (BorrowerDoc borrower : borrowers) {
+            // Delete ledger entries associated with the borrower
+            ledgerRepository.deleteByBorrower(borrower);
+
+            // Now delete the borrower
+            borrowerRepository.delete(borrower);
+        }
+
+        // Delete Expense Transactions and Expense Trackers
+        List<ExpenseTracker> expenseTrackers = customer.getExpenseTracker();
+        for (ExpenseTracker expenseTracker : expenseTrackers) {
+            // Remove all transactions from the expense tracker
+            List<ExpenseTransaction> transactions = expenseTracker.getTransactions();
+            transactions.clear(); // This will ensure they are removed from the database
+
+            // Delete the expense tracker itself
+            expenseTrackerRepository.delete(expenseTracker);
+        }
+
+        // Delete SelfNotes
+        List<SelfNotes> selfNotes = customer.getSelfnotes();
+        selfNotesRepository.deleteAll(selfNotes);
+
+        // Finally, delete the customer
+        customerRepository.delete(customer);
+    }
+
+    public CustomerDoc getCustomerById(Long customerId) {
+        return repo.findById(customerId).orElse(null);
+    }
 
 //	@Override
-//	public List<SelfNotes> getAllNotes() {
+//	public void deleteCustomerById(Long customerId) {
 //		// TODO Auto-generated method stub
-//		return null;
+//		customerRepository.deleteAll();
+//		
+//		
 //	}
+
+
 
 }
