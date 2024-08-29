@@ -1,5 +1,6 @@
 package com.sharp.noteIt.controller;
 
+import com.sharp.noteIt.model.ChangePasswordRequest;
 import com.sharp.noteIt.model.CustomerDoc;
 import com.sharp.noteIt.model.ReqRes;
 import com.sharp.noteIt.repo.CustomerRepository;
@@ -49,6 +50,16 @@ public class OtpController {
             return ResponseEntity.ok("Password has been reset successfully");
         } else {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid OTP");
+        }
+    }
+    @PostMapping("/change-password")
+    public ResponseEntity<String> changePassword(@RequestBody ChangePasswordRequest request) {
+        try {
+            otpService.changePassword(request.getCustomerId(), request.getOldPassword(), 
+                                       request.getNewPassword(), request.getConfirmPassword());
+            return ResponseEntity.ok("Password changed successfully");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 }

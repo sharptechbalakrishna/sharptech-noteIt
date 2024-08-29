@@ -763,16 +763,21 @@ public class CustomerServiceImpl implements CustomerServiceI {
 //        // Now, delete the customer itself
 //        customerRepository.delete(customer);
 //    }
-    
     @Transactional
     public void deleteCustomerById(Long customerId) {
         // Fetch the customer
         CustomerDoc customer = customerRepository.findById(customerId)
             .orElseThrow(() -> new RuntimeException("Customer not found"));
 
+        // Log for debugging
+        System.out.println("Deleting customer with ID: " + customerId);
+
         // Delete Ledger Entries associated with Borrowers first
         List<BorrowerDoc> borrowers = customer.getBorrowers();
         for (BorrowerDoc borrower : borrowers) {
+            // Log for debugging
+            System.out.println("Deleting ledger entries for borrower ID: " + borrower.getId());
+
             // Delete ledger entries associated with the borrower
             ledgerRepository.deleteByBorrower(borrower);
 
@@ -783,6 +788,9 @@ public class CustomerServiceImpl implements CustomerServiceI {
         // Delete Expense Transactions and Expense Trackers
         List<ExpenseTracker> expenseTrackers = customer.getExpenseTracker();
         for (ExpenseTracker expenseTracker : expenseTrackers) {
+            // Log for debugging
+            System.out.println("Deleting transactions and expense tracker ID: " + expenseTracker.getId());
+
             // Remove all transactions from the expense tracker
             List<ExpenseTransaction> transactions = expenseTracker.getTransactions();
             transactions.clear(); // This will ensure they are removed from the database
@@ -793,11 +801,17 @@ public class CustomerServiceImpl implements CustomerServiceI {
 
         // Delete SelfNotes
         List<SelfNotes> selfNotes = customer.getSelfnotes();
+        for (SelfNotes note : selfNotes) {
+            // Log for debugging
+            System.out.println("Deleting self note ID: " + note.getId());
+        }
         selfNotesRepository.deleteAll(selfNotes);
 
         // Finally, delete the customer
+        System.out.println("Deleting customer ID: " + customerId);
         customerRepository.delete(customer);
     }
+
 
     public CustomerDoc getCustomerById(Long customerId) {
         return repo.findById(customerId).orElse(null);

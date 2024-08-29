@@ -31,7 +31,7 @@ public class LedgerCal implements Serializable{
 	    private boolean locked;
 
 	    @ManyToOne(fetch = FetchType.LAZY)
-	    @JoinColumn(name = "borrower_id",nullable = false)
+	    @JoinColumn(name = "borrower_id")
 	    @JsonManagedReference
 	    private BorrowerDoc borrower;
 

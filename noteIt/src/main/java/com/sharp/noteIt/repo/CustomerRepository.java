@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.sharp.noteIt.model.CustomerDoc;
+import com.sharp.noteIt.model.User;
 
 @Repository
 @EnableJpaRepositories
@@ -24,5 +25,7 @@ public interface CustomerRepository extends JpaRepository<CustomerDoc, Long>{
 	    CustomerDoc findSingleByEmail(@Param("email") String email);
 	
 	//Optional<CustomerDoc> findByemai(String email);
+	// Optional<User> findByUsername(String username);
+	// Optional<CustomerDoc> findByPhone(String phone);
 	
 }

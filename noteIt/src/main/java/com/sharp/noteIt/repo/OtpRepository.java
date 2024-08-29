@@ -8,4 +8,5 @@ import com.sharp.noteIt.model.Otp;
 @Repository
 public interface OtpRepository extends JpaRepository<Otp, Long>{
 	Otp findByEmailAndOtp(String email, String otp);
+	
 }

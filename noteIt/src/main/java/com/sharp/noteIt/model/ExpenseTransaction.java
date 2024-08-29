@@ -43,7 +43,7 @@ public class ExpenseTransaction {
     private Date updatedTs;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "expense_tracker_id",nullable = false)
+    @JoinColumn(name = "expense_tracker_id")
     @JsonBackReference
     private ExpenseTracker expenseTracker;
     

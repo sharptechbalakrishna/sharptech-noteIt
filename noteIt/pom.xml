@@ -55,7 +55,7 @@
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-security</artifactId>
 </dependency>
-	<dependencies>
+	<!--<dependencies>-->
    	<!-- https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt-impl -->
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>
@@ -92,7 +92,7 @@
         <version>4.13.2</version>
         <scope>test</scope>
     </dependency>
-</dependencies>
+<!--</dependencies>-->
 
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

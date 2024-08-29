@@ -20,13 +20,15 @@ public class JWTUtils {
     private SecretKey key;
     private static final long EXPIRATION_TIME = 86400000; // 24 hours
 
-    public JWTUtils() {
+    @SuppressWarnings("deprecation")
+	public JWTUtils() {
         String secretString = "D4B6667451B6212C191507A1285E89EA6F4C34CDBEB7E5538B10A2BBBDBD2D021C9D7471218908179B66FD499BF5F1A173B754454ED5ED048ECF5DE1F3CEB168";
         byte[] keyBytes = Base64.getDecoder().decode(secretString.getBytes(StandardCharsets.UTF_8));
         this.key = new SecretKeySpec(keyBytes, SignatureAlgorithm.HS256.getJcaName());
     }
 
-    public String generateToken(UserDetails userDetails) {
+    @SuppressWarnings("deprecation")
+	public String generateToken(UserDetails userDetails) {
         return Jwts.builder()
                 .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
@@ -35,7 +37,8 @@ public class JWTUtils {
                 .compact();
     }
 
-    public String generateRefreshToken(HashMap<String, Object> claims, UserDetails userDetails) {
+    @SuppressWarnings("deprecation")
+	public String generateRefreshToken(HashMap<String, Object> claims, UserDetails userDetails) {
         return Jwts.builder()
                 .addClaims(claims)
                 .setSubject(userDetails.getUsername())
@@ -54,8 +57,9 @@ public class JWTUtils {
         return claimsResolver.apply(claims);
     }
 
-    private Claims getAllClaimsFromToken(String token) {
-        return Jwts.parserBuilder()
+    @SuppressWarnings("deprecation")
+	private Claims getAllClaimsFromToken(String token) {
+        return  Jwts.parser()
                 .setSigningKey(key)
                 .build()
                 .parseClaimsJws(token)

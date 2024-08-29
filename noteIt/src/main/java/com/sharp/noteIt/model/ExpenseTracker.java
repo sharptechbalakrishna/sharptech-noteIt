@@ -49,7 +49,7 @@ public class ExpenseTracker implements Serializable{
 	    private List<ExpenseTransaction> transactions = new ArrayList<>();
 
 	    @ManyToOne(fetch = FetchType.LAZY)
-	    @JoinColumn(name = "customer_id",nullable = false)
+	    @JoinColumn(name = "customer_id")
 	    @JsonBackReference
 	    private CustomerDoc customer;
 
