@@ -1,10 +1,12 @@
 package com.sharp.noteIt.controller;
 
 import com.sharp.noteIt.model.*;
+import java.util.NoSuchElementException;
 import com.sharp.noteIt.repo.CustomerRepository;
 import com.sharp.noteIt.security.JWTService;
 import com.sharp.noteIt.security.OurUserDetailsService;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -117,4 +119,32 @@ public class AuthController {
             return "Invalid transaction ID or phone number!";
         }
     }
+    @PutMapping("/updateCustomer")
+    public ResponseEntity<?> updateCustomer(@RequestBody CustomerRequest request) {
+        // Check if the customer with the given ID exists
+        CustomerDoc existingCustomer = customerRepository.findById(request.getId())
+                .orElseThrow(() -> new NoSuchElementException("Customer not found with id " + request.getId()));
+        
+        // Check if the phone number already exists for another customer
+        CustomerDoc customerWithSamePhone = customerRepository.findByPhone(request.getPhone());
+        if (customerWithSamePhone != null && !customerWithSamePhone.getId().equals(existingCustomer.getId())) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Phone number already registered to another user");
+        }
+        
+        // Update fields if they are not null
+        if (request.getEmail() != null) existingCustomer.setEmail(request.getEmail());
+        if (request.getFirstName() != null) existingCustomer.setFirstName(request.getFirstName());
+        if (request.getLastName() != null) existingCustomer.setLastName(request.getLastName());
+        if (request.getUserName() != null) existingCustomer.setUserName(request.getUserName());
+        if (request.getPhone() != null) existingCustomer.setPhone(request.getPhone());
+        if (request.getPassword() != null) existingCustomer.setPassword(passwordEncoder.encode(request.getPassword()));
+        if (request.getImage() != null) existingCustomer.setImage(request.getImage());
+        existingCustomer.setUpdatedTs(new Date());
+
+        customerRepository.save(existingCustomer);
+
+        return ResponseEntity.ok("User updated successfully");
+    }
+
+
 }

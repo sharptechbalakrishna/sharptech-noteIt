@@ -34,7 +34,7 @@ public class OtpServiceImpl implements OtpService {
         Otp otp = new Otp();
         otp.setEmail(email);
         otp.setOtp(otpValue);
-        otp.setExpiryTime(expiryTime);
+        otp.setExpirydate(expiryTime);
 
         otpRepository.save(otp);
 
@@ -47,7 +47,7 @@ public class OtpServiceImpl implements OtpService {
     @Override
     public boolean validateOtp(String email, String otp) {
         Otp storedOtp = otpRepository.findByEmailAndOtp(email, otp);
-        if (storedOtp != null && storedOtp.getExpiryTime().isAfter(LocalDateTime.now())) {
+        if (storedOtp != null && storedOtp.getExpirydate().isAfter(LocalDateTime.now())) {
             otpRepository.delete(storedOtp); // OTP is used and should be removed
             return true;
         }
