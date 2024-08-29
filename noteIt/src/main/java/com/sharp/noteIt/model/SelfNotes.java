@@ -26,7 +26,7 @@ public class SelfNotes {
 	private Date updatedTs;
 	
 	@ManyToOne
-    @JoinColumn(name = "customer_id")
+    @JoinColumn(name = "customer_id", nullable = true)
 	@JsonBackReference
     private CustomerDoc customer;
 	
