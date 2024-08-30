@@ -23,7 +23,9 @@ public class CustomerRequest implements Serializable{
 	private List<BorrowerDoc> borrowers;
 	private String Image;
 	private String role;
-
+	private String jwtToken;
+    private String transactionId;
+    private String message;
 	
 	public Long getId() {
 		return id;
@@ -84,6 +86,24 @@ public class CustomerRequest implements Serializable{
 	}
 	public void setRole(String role) {
 		this.role = role;
+	}
+	public String getJwtToken() {
+		return jwtToken;
+	}
+	public void setJwtToken(String jwtToken) {
+		this.jwtToken = jwtToken;
+	}
+	public String getTransactionId() {
+		return transactionId;
+	}
+	public void setTransactionId(String transactionId) {
+		this.transactionId = transactionId;
+	}
+	public String getMessage() {
+		return message;
+	}
+	public void setMessage(String message) {
+		this.message = message;
 	}
 	
 	

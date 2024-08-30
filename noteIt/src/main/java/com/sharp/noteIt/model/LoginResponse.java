@@ -6,6 +6,7 @@ public class LoginResponse {
 	private String jwtToken;
     private String transactionId;
     private String message;
+    private CustomerDoc customerDetails;
 
     public String getJwtToken() {
 		return jwtToken;
@@ -31,5 +32,14 @@ public class LoginResponse {
     public void setMessage(String message) {
         this.message = message;
     }
+
+	public CustomerDoc getCustomerDetails() {
+		return customerDetails;
+	}
+
+	public void setCustomerDetails(CustomerDoc customerDetails) {
+		this.customerDetails = customerDetails;
+	}
+    
 }
 

@@ -27,5 +27,6 @@ public interface CustomerRepository extends JpaRepository<CustomerDoc, Long>{
 	//Optional<CustomerDoc> findByemai(String email);
 	// Optional<User> findByUsername(String username);
 	// Optional<CustomerDoc> findByPhone(String phone);
+	// Optional<CustomerDoc> findByPhoneNumber(String phone);
 	
 }

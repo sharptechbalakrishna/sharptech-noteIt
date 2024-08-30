@@ -1,12 +1,13 @@
 package com.sharp.noteIt.service;
 
 import java.text.SimpleDateFormat;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import java.util.NoSuchElementException;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.NoSuchElementException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -816,7 +817,19 @@ public class CustomerServiceImpl implements CustomerServiceI {
     public CustomerDoc getCustomerById(Long customerId) {
         return repo.findById(customerId).orElse(null);
     }
+    
+    @Override
+    public CustomerDoc findByPhone(String phone) {
+        // Use the repository to find the customer by phone number
+        return customerRepository.findByPhone(phone);
+    }
+//    @Autowired
+//    private CustomerRepository customerRepository;
 
+//    public CustomerDoc findByPhoneNumber(String phone) {
+//        return customerRepository.findByPhoneNumber(phone)
+//                .orElseThrow(() -> new UsernameNotFoundException("User not found with phone: " + phone));
+//    }
 //	@Override
 //	public void deleteCustomerById(Long customerId) {
 //		// TODO Auto-generated method stub

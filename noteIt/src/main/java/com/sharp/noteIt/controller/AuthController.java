@@ -5,6 +5,7 @@ import java.util.NoSuchElementException;
 import com.sharp.noteIt.repo.CustomerRepository;
 import com.sharp.noteIt.security.JWTService;
 import com.sharp.noteIt.security.OurUserDetailsService;
+import com.sharp.noteIt.service.CustomerServiceI;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -37,6 +38,8 @@ public class AuthController {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+    @Autowired
+    private CustomerServiceI customerServiceI;
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody CustomerDoc customerDoc) {
@@ -90,15 +93,31 @@ public class AuthController {
             final UserDetails userDetails = userDetailsService.loadUserByUsername(authRequest.getPhone());
             final String token = jwtService.generateToken(userDetails);
 
+            // Fetch customer details using the phone number
+            CustomerDoc customerDoc = customerServiceI.findByPhone(authRequest.getPhone());
+            if (customerDoc == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Customer not found");
+            }
+
             // Generate a transaction ID
             String transactionId = UUID.randomUUID().toString();
             transactionMap.put(authRequest.getPhone(), transactionId);
 
             // Create and return the login response
-            LoginResponse response = new LoginResponse();
+            CustomerRequest response = new CustomerRequest();
             response.setJwtToken(token);
             response.setTransactionId(transactionId);
             response.setMessage("Login successful!");
+            
+            // Populate CustomerRequest with details from CustomerDoc
+            response.setEmail(customerDoc.getEmail());
+            response.setId(customerDoc.getId());
+            response.setFirstName(customerDoc.getFirstName());
+            response.setImage(customerDoc.getImage());
+            response.setLastName(customerDoc.getLastName());
+            response.setPassword(customerDoc.getPassword()); // Typically you don't send passwords in the response.
+            response.setPhone(customerDoc.getPhone());
+            response.setUserName(customerDoc.getUserName());
 
             return ResponseEntity.ok(response);
 
@@ -106,6 +125,7 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid phone number or password");
         }
     }
+
 
 
     @PostMapping("/logout")

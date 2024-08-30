@@ -64,4 +64,6 @@ public interface CustomerServiceI {
 	    //void deleteCustomerById(Long id);
 	    @Transactional
 	    void deleteCustomerById(Long customerId);
+		//public CustomerDoc findByPhoneNumber(String phone);
+	    CustomerDoc findByPhone(String phone);
 }
