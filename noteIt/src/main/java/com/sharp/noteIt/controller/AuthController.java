@@ -140,7 +140,7 @@ public class AuthController {
         }
     }
     @PutMapping("/updateCustomer")
-    public ResponseEntity<?> updateCustomer(@RequestBody CustomerRequest request) {
+    public ResponseEntity<CustomerResponse> updateCustomer(@RequestBody CustomerRequest request) {
         // Check if the customer with the given ID exists
         CustomerDoc existingCustomer = customerRepository.findById(request.getId())
                 .orElseThrow(() -> new NoSuchElementException("Customer not found with id " + request.getId()));
@@ -148,7 +148,7 @@ public class AuthController {
         // Check if the phone number already exists for another customer
         CustomerDoc customerWithSamePhone = customerRepository.findByPhone(request.getPhone());
         if (customerWithSamePhone != null && !customerWithSamePhone.getId().equals(existingCustomer.getId())) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("Phone number already registered to another user");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(null); // Return null or custom error response object
         }
         
         // Update fields if they are not null
@@ -161,10 +161,22 @@ public class AuthController {
         if (request.getImage() != null) existingCustomer.setImage(request.getImage());
         existingCustomer.setUpdatedTs(new Date());
 
-        customerRepository.save(existingCustomer);
+        // Save the updated customer
+        CustomerDoc updatedCustomer = customerRepository.save(existingCustomer);
 
-        return ResponseEntity.ok("User updated successfully");
+        // Prepare the response DTO
+        CustomerResponse response = new CustomerResponse();
+        response.setId(updatedCustomer.getId());
+        response.setEmail(updatedCustomer.getEmail());
+        response.setFirstName(updatedCustomer.getFirstName());
+        response.setLastName(updatedCustomer.getLastName());
+        response.setUserName(updatedCustomer.getUserName());
+        response.setPhone(updatedCustomer.getPhone());
+        response.setImage(updatedCustomer.getImage());
+        response.setCreatedTs(updatedCustomer.getCreatedTs());
+        response.setUpdatedTs(updatedCustomer.getUpdatedTs());
+
+        // Return the updated customer details
+        return ResponseEntity.ok(response);
     }
-
-
 }
