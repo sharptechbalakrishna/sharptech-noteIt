@@ -64,7 +64,7 @@ public class CustomerDoc extends BaseDoc {
     @JsonManagedReference
     private List<BorrowerDoc> borrowers;
     
-    @OneToMany(targetEntity = SelfNotes.class, cascade = CascadeType.ALL, fetch = FetchType.EAGER,orphanRemoval = true)
+    @OneToMany(targetEntity = SelfNotes.class, cascade = CascadeType.REMOVE, fetch = FetchType.EAGER,orphanRemoval = true)
     @JoinColumn(name = "customer_id",referencedColumnName = "id")
     @JsonManagedReference
     List<SelfNotes> selfnotes;
