@@ -156,17 +156,15 @@ public class LedgerServiceImpl implements LedgerService{
 	        double excessAmount = interestPaid - interestAmount;
 
 	        if (excessAmount > 0) {
-	            // Reduce principal amount by excess amount
+	            // Reduce principal amount by excess amount only in the latest ledger
 	            principalAmount -= excessAmount;
+	            ledger.setPrincipalAmount(principalAmount);  // Update principal amount in the current ledger
 	            ledger.setStatus(principalAmount <= 0 ? "CLOSED" : "PAID");
 	        } else {
 	            ledger.setStatus("DUE");
-	            // Calculate remaining interest for the next month
-	            ledger.setInterestAmount(interestAmount - interestPaid); // Adjust for remaining amount
 	        }
 
 	        // Update ledger with new values
-	        ledger.setPrincipalAmount(principalAmount);
 	        ledger.setInterestPaid(interestPaid);
 
 	        // Lock the current month's ledger
@@ -175,11 +173,12 @@ public class LedgerServiceImpl implements LedgerService{
 	        // Save the updated ledger
 	        ledgerRepository.save(ledger);
 
+	        // If principal amount is still remaining, calculate the ledger for the next month
 	        if (principalAmount > 0) {
-	            // Calculate the ledger for the next month based on the updated principal amount and remaining interest
 	            calculateNextMonthLedger(ledger.getBorrower().getId(), principalAmount, ledger.getInterestAmount() - interestPaid);
 	        }
 	    }
+
 
 	    
 	    @Transactional

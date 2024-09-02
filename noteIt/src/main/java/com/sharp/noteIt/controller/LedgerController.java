@@ -33,47 +33,72 @@ public class LedgerController {
 //        return ResponseEntity.ok(customer);
 //    }
 	
-	@Autowired
-	MessageService messageService;
+//	@Autowired
+//	MessageService messageService;
+//	@PostMapping("/{customerId}/borrowers")
+//    public ResponseEntity<?> addBorrowerToCustomer(@PathVariable Long customerId, @RequestBody BorrowerDoc borrowerDoc) {
+//        // Add borrower to customer
+//        CustomerDoc customer = ledgerService.addBorrowerToCustomer(customerId, borrowerDoc);
+//
+//        // Fetch customer and borrower details
+//        String customerName = customer.getUserName();
+//        String borrowerName = borrowerDoc.getBorrowerName();
+//        Double principalAmount = borrowerDoc.getPrincipalAmount();
+//        Double interestRate = borrowerDoc.getInterestRate();
+//
+//        // Create message for borrower addition
+//        String additionMessage = String.format(
+//            "Hello %s, you have been added as a borrower for %s. Details: Principal Amount: %.2f, Interest Rate: %.2f.",
+//            borrowerName,
+//            customerName,
+//            principalAmount,
+//            interestRate
+//        );
+//
+//        // Send SMS to borrower for addition
+//        messageService.sendSms(borrowerDoc.getPhoneNumber(), additionMessage);
+//
+//        // Notify about due payments
+//        notifyDuePayments(borrowerDoc);
+//
+//        return ResponseEntity.ok(customer);
+//    }
+
+//    private void notifyDuePayments(BorrowerDoc borrowerDoc) {
+//        // Logic to calculate due payments
+//        // You need to have a mechanism to calculate dues and the notification message
+//
+//        // Example due message
+//        String dueMessage = "Reminder: Your due payment for this month is approaching. Please ensure that the payment is made before the 5th of the month.";
+//
+//        // Send SMS notification about due payments
+//        messageService.sendSms(borrowerDoc.getPhoneNumber(), dueMessage);
+//    }
+	
+	
+	
+	
 	@PostMapping("/{customerId}/borrowers")
-    public ResponseEntity<?> addBorrowerToCustomer(@PathVariable Long customerId, @RequestBody BorrowerDoc borrowerDoc) {
-        // Add borrower to customer
-        CustomerDoc customer = ledgerService.addBorrowerToCustomer(customerId, borrowerDoc);
+	public ResponseEntity<?> addBorrowerToCustomer(@PathVariable Long customerId, @RequestBody BorrowerDoc borrowerDoc) {
+	    // Add borrower to customer
+	    CustomerDoc customer = ledgerService.addBorrowerToCustomer(customerId, borrowerDoc);
 
-        // Fetch customer and borrower details
-        String customerName = customer.getUserName();
-        String borrowerName = borrowerDoc.getBorrowerName();
-        Double principalAmount = borrowerDoc.getPrincipalAmount();
-        Double interestRate = borrowerDoc.getInterestRate();
+	    // Optionally, fetch customer and borrower details if needed
+	    String customerName = customer.getUserName();
+	    String borrowerName = borrowerDoc.getBorrowerName();
+	    Double principalAmount = borrowerDoc.getPrincipalAmount();
+	    Double interestRate = borrowerDoc.getInterestRate();
 
-        // Create message for borrower addition
-        String additionMessage = String.format(
-            "Hello %s, you have been added as a borrower for %s. Details: Principal Amount: %.2f, Interest Rate: %.2f.",
-            borrowerName,
-            customerName,
-            principalAmount,
-            interestRate
-        );
+	    // You can log the details or perform other operations if needed
+	    System.out.println(String.format(
+	        "Borrower %s added to customer %s with Principal Amount: %.2f and Interest Rate: %.2f.",
+	        borrowerName, customerName, principalAmount, interestRate
+	    ));
 
-        // Send SMS to borrower for addition
-        messageService.sendSms(borrowerDoc.getPhoneNumber(), additionMessage);
+	    // If you don't want to send SMS messages, just return the response
+	    return ResponseEntity.ok(customer);
+	}
 
-        // Notify about due payments
-        notifyDuePayments(borrowerDoc);
-
-        return ResponseEntity.ok(customer);
-    }
-
-    private void notifyDuePayments(BorrowerDoc borrowerDoc) {
-        // Logic to calculate due payments
-        // You need to have a mechanism to calculate dues and the notification message
-
-        // Example due message
-        String dueMessage = "Reminder: Your due payment for this month is approaching. Please ensure that the payment is made before the 5th of the month.";
-
-        // Send SMS notification about due payments
-        messageService.sendSms(borrowerDoc.getPhoneNumber(), dueMessage);
-    }
 	
     @PostMapping("/ledger/update")
     public ResponseEntity<?> updateInterestPaid(@RequestBody LedgerUpdateRequest request) {
