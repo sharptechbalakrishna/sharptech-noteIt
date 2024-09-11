@@ -16,6 +16,7 @@ import com.sharp.noteIt.model.BorrowerRequest;
 import com.sharp.noteIt.model.CustomerDoc;
 import com.sharp.noteIt.model.LedgerCal;
 import com.sharp.noteIt.model.LedgerUpdateRequest;
+import com.sharp.noteIt.model.LedgerUpdateResponse;
 import com.sharp.noteIt.service.LedgerService;
 import com.sharp.noteIt.service.MessageService;
 import com.sharp.noteIt.service.SmsService;
@@ -100,11 +101,11 @@ public class LedgerController {
 	}
 
 	
-    @PostMapping("/ledger/update")
-    public ResponseEntity<?> updateInterestPaid(@RequestBody LedgerUpdateRequest request) {
-    	ledgerService.updateInterestPaid(request);
-        return ResponseEntity.ok("Interest paid updated successfully");
-    }
+	 @PostMapping("/ledger/update")
+	    public ResponseEntity<LedgerUpdateResponse> updateLedger(@RequestBody LedgerUpdateRequest request) {
+	        LedgerUpdateResponse response = ledgerService.updateInterestPaid(request);
+	        return ResponseEntity.ok(response);
+	    }
 
     @GetMapping("/borrowers/{borrowerId}/ledger")
     public ResponseEntity<?> getAndUpdateLedger(@PathVariable Long borrowerId) {

@@ -1,5 +1,7 @@
 package com.sharp.noteIt.service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -15,279 +17,289 @@ import com.sharp.noteIt.model.BorrowerRequest;
 import com.sharp.noteIt.model.CustomerDoc;
 import com.sharp.noteIt.model.LedgerCal;
 import com.sharp.noteIt.model.LedgerUpdateRequest;
+import com.sharp.noteIt.model.LedgerUpdateResponse;
 import com.sharp.noteIt.repo.BorrowerRepository;
 import com.sharp.noteIt.repo.CustomerRepository;
 import com.sharp.noteIt.repo.LedgerRepository;
 
 import jakarta.transaction.Transactional;
+
 @Service
-public class LedgerServiceImpl implements LedgerService{
-	
-	 @Autowired
-	    private CustomerRepository customerRepository;
+public class LedgerServiceImpl implements LedgerService {
 
-	    @Autowired
-	    private BorrowerRepository borrowerRepository;
+    @Autowired
+    private CustomerRepository customerRepository;
 
-	    @Autowired
-	    private LedgerRepository ledgerRepository;
-	    
-	
-	    public CustomerDoc addBorrowerToCustomer(Long customerId, BorrowerDoc borrowerDoc) {
-	        Optional<CustomerDoc> customerOptional = customerRepository.findById(customerId);
-	        //String message = "Dear " + borrowerDoc.getBorrowerName() + ", you have been added as a borrower.";
-	        //messageService.sendSms(borrowerDoc.getPhoneNumber(), message);
-	        if (customerOptional.isPresent()) {
-	            CustomerDoc customer = customerOptional.get();
-	            borrowerDoc.setCustomerDoc(customer);
-	            borrowerRepository.save(borrowerDoc);
-	            customer.getBorrowers().add(borrowerDoc);
-	            customerRepository.save(customer);
+    @Autowired
+    private BorrowerRepository borrowerRepository;
 
-	            // Calculate and generate initial ledger entries for the newly added borrower
-	            calculateAndGenerateInitialLedger(borrowerDoc);
+    @Autowired
+    private LedgerRepository ledgerRepository;
 
-	            return customer;
-	        } else {
-	            throw new RuntimeException("Customer not found");
-	        }
-	     
-	    }
+    @Override
+    public CustomerDoc addBorrowerToCustomer(Long customerId, BorrowerDoc borrowerDoc) {
+        Optional<CustomerDoc> customerOptional = customerRepository.findById(customerId);
+        if (customerOptional.isPresent()) {
+            CustomerDoc customer = customerOptional.get();
+            borrowerDoc.setCustomerDoc(customer);
+            borrowerRepository.save(borrowerDoc);
+            customer.getBorrowers().add(borrowerDoc);
+            customerRepository.save(customer);
 
-	    private void calculateAndGenerateInitialLedger(BorrowerDoc borrowerDoc) {
-	        Calendar start = Calendar.getInstance();
-	        start.setTime(borrowerDoc.getBorrowedDate());
+            // Calculate and generate initial ledger entries for the newly added borrower
+            calculateAndGenerateInitialLedger(borrowerDoc);
+            return customer;
+        } else {
+            throw new RuntimeException("Customer not found");
+        }
+    }
 
-	        Calendar end = Calendar.getInstance();
-	        end.setTime(borrowerDoc.getEndDate());
+    private void calculateAndGenerateInitialLedger(BorrowerDoc borrowerDoc) {
+        Calendar start = Calendar.getInstance();
+        start.setTime(borrowerDoc.getBorrowedDate());
 
-	        // Calculate only for the current month
-	        String month = new SimpleDateFormat("MMMM yyyy").format(start.getTime());
-	        double monthlyInterestAmount = (borrowerDoc.getPrincipalAmount() * (borrowerDoc.getInterestRate() / 100)) / 12;
-	        int daysInMonth = start.getActualMaximum(Calendar.DAY_OF_MONTH);
+        int startDay = start.get(Calendar.DAY_OF_MONTH);  // Day of the month loan started
+        int lastDayOfMonth = start.getActualMaximum(Calendar.DAY_OF_MONTH);  // Last day of the month
+        int daysLeftInMonth = lastDayOfMonth - startDay + 1;  // Days left from start to the end of the month
 
-	        LedgerCal ledger = new LedgerCal();
-	        ledger.setPrincipalAmount(borrowerDoc.getPrincipalAmount());
-	        ledger.setInterestAmount(monthlyInterestAmount);
-	        ledger.setMonth(month);
-	        ledger.setDays(start.get(Calendar.DAY_OF_MONTH));
-	        ledger.setInterestPaid(0.0); // Initial interest paid is 0
-	        ledger.setStatus("DUE");
-	        ledger.setBorrower(borrowerDoc);
-	        ledger.setLocked(false);
+        String month = new SimpleDateFormat("MMMM yyyy").format(start.getTime());
+        BigDecimal principalAmount = BigDecimal.valueOf(borrowerDoc.getPrincipalAmount());
+        BigDecimal interestRate = BigDecimal.valueOf(borrowerDoc.getInterestRate()).divide(BigDecimal.valueOf(100));
 
-	        ledgerRepository.save(ledger);
-	    }
+        // Interest for remaining days in the starting month
+        BigDecimal dailyInterestRate = interestRate.divide(BigDecimal.valueOf(365), 6, RoundingMode.HALF_UP);
+        BigDecimal interestAmount = principalAmount.multiply(dailyInterestRate).multiply(BigDecimal.valueOf(daysLeftInMonth)).setScale(2, RoundingMode.HALF_UP);
 
-	  
-	    @Transactional
-	    public BorrowerDoc calculateAndUpdateLedger(Long borrowerId) {
-	        BorrowerDoc borrowerDoc = borrowerRepository.findById(borrowerId)
-	                .orElseThrow(() -> new RuntimeException("Borrower not found"));
+        LedgerCal ledger = new LedgerCal();
+        ledger.setPrincipalAmount(principalAmount.setScale(2, RoundingMode.HALF_UP).doubleValue());
+        ledger.setInterestAmount(interestAmount.doubleValue());
+        ledger.setMonth(month);
+        ledger.setDays(daysLeftInMonth);  // Store days left in the current month
+        ledger.setInterestPaid(0.0);  // Initial interest paid is 0
+        ledger.setStatus("DUE");
+        ledger.setBorrower(borrowerDoc);
+        ledger.setLocked(false);
 
-	        Calendar start = Calendar.getInstance();
-	        start.setTime(borrowerDoc.getBorrowedDate());
+        ledgerRepository.save(ledger);
+    }
 
-	        // Fetch the ledger for the current month
-	        LedgerCal currentMonthLedger = ledgerRepository.findByBorrowerAndMonth(borrowerDoc, 
-	            new SimpleDateFormat("MMMM yyyy").format(start.getTime()))
-	                .orElseThrow(() -> new RuntimeException("Current month's ledger not found"));
+    @Override
+    @Transactional
+    public BorrowerDoc calculateAndUpdateLedger(Long borrowerId) {
+        BorrowerDoc borrowerDoc = borrowerRepository.findById(borrowerId)
+                .orElseThrow(() -> new RuntimeException("Borrower not found"));
 
-	        double principalAmount = borrowerDoc.getPrincipalAmount();
-	        double interestRate = borrowerDoc.getInterestRate();
-	        Date endDate = borrowerDoc.getEndDate();
+        Calendar start = Calendar.getInstance();
+        start.setTime(borrowerDoc.getBorrowedDate());
 
-	        if (endDate == null || start.getTime().after(endDate)) {
-	            throw new IllegalArgumentException("Invalid end date");
-	        }
+        String currentMonth = new SimpleDateFormat("MMMM yyyy").format(start.getTime());
 
-	        int daysInMonth = start.getActualMaximum(Calendar.DAY_OF_MONTH);
-	        double monthlyInterestAmount = (principalAmount * (interestRate / 100)) / 12;
-	        double interestPerDay = monthlyInterestAmount / daysInMonth;
+        LedgerCal currentMonthLedger = ledgerRepository.findByBorrowerAndMonth(borrowerDoc, currentMonth)
+                .orElseGet(() -> {
+                    // Create a new ledger if not exists
+                    LedgerCal newLedger = new LedgerCal();
+                    newLedger.setMonth(currentMonth);
+                    newLedger.setBorrower(borrowerDoc);
+                    newLedger.setLocked(false);
+                    ledgerRepository.save(newLedger);
+                    return newLedger;
+                });
 
-	        // Calculate interest for days left in the current month
-	        int daysLeftInMonth = daysInMonth - start.get(Calendar.DAY_OF_MONTH) + 1;
-	        double interestForCurrentMonth = interestPerDay * daysLeftInMonth;
+        BigDecimal principalAmount = BigDecimal.valueOf(borrowerDoc.getPrincipalAmount());
+        BigDecimal interestRate = BigDecimal.valueOf(borrowerDoc.getInterestRate()).divide(BigDecimal.valueOf(100));
+        BigDecimal monthlyInterestAmount = principalAmount.multiply(interestRate).divide(BigDecimal.valueOf(12), 2, RoundingMode.HALF_UP);
+        BigDecimal interestPaid = BigDecimal.valueOf(currentMonthLedger.getInterestPaid());
+        BigDecimal remainingInterest = monthlyInterestAmount.subtract(interestPaid);
+        BigDecimal excessInterestPaid = interestPaid.subtract(monthlyInterestAmount);
 
-	        double interestPaid = currentMonthLedger.getInterestPaid(); // Placeholder value
+        if (excessInterestPaid.compareTo(BigDecimal.ZERO) > 0) {
+            principalAmount = principalAmount.subtract(excessInterestPaid);
+            currentMonthLedger.setStatus(principalAmount.compareTo(BigDecimal.ZERO) <= 0 ? "CLOSED" : "PAID");
+        } else if (remainingInterest.compareTo(BigDecimal.ZERO) > 0) {
+            currentMonthLedger.setStatus("DUE");
+        }
 
-	        // Update the ledger based on the interest paid
-	        double remainingInterest = interestForCurrentMonth - interestPaid; // Calculate remaining interest
-	        double excessAmount = interestPaid - interestForCurrentMonth;
+        currentMonthLedger.setInterestPaid(interestPaid.setScale(2, RoundingMode.HALF_UP).doubleValue());
+        currentMonthLedger.setPrincipalAmount(principalAmount.setScale(2, RoundingMode.HALF_UP).doubleValue());
+        ledgerRepository.save(currentMonthLedger);
 
-	        if (excessAmount > 0) {
-	            principalAmount -= excessAmount;
-	            currentMonthLedger.setStatus(principalAmount <= 0 ? "CLOSED" : "PAID");
-	        } else {
-	            currentMonthLedger.setStatus("DUE");
-	        }
+        // Calculate ledger for the next month
+        calculateNextMonthLedger(borrowerId, principalAmount.doubleValue(), excessInterestPaid.doubleValue(), currentMonth);
 
-	        // Update ledger with new values
-	        currentMonthLedger.setPrincipalAmount(principalAmount);
-	        currentMonthLedger.setInterestPaid(interestPaid);
-	        ledgerRepository.save(currentMonthLedger);
-
-	        // If principal amount is still remaining, calculate the ledger for the next month
-	        if (principalAmount > 0) {
-	            calculateNextMonthLedger(borrowerId, principalAmount, remainingInterest);
-	        }
-
-	        borrowerDoc.setPrincipalAmount(principalAmount);
-	        borrowerRepository.save(borrowerDoc);
-
-	        return borrowerDoc;
-	    }
-
-	  
-	    @Transactional
-	    public void updateInterestPaid(LedgerUpdateRequest request) {
-	        LedgerCal ledger = ledgerRepository.findById(request.getLedgerId())
-	                .orElseThrow(() -> new RuntimeException("Ledger not found"));
-
-	        if (ledger.isLocked()) {
-	            throw new RuntimeException("Ledger entry is locked and cannot be modified.");
-	        }
-
-	        double interestPaid = request.getInterestPaid();
-	        double interestAmount = ledger.getInterestAmount();
-	        double principalAmount = ledger.getPrincipalAmount();
-
-	        // Calculate excess amount
-	        double excessAmount = interestPaid - interestAmount;
-
-	        if (excessAmount > 0) {
-	            // Reduce principal amount by excess amount only in the latest ledger
-	            principalAmount -= excessAmount;
-	            ledger.setPrincipalAmount(principalAmount);  // Update principal amount in the current ledger
-	            ledger.setStatus(principalAmount <= 0 ? "CLOSED" : "PAID");
-	        } else {
-	            ledger.setStatus("DUE");
-	        }
-
-	        // Update ledger with new values
-	        ledger.setInterestPaid(interestPaid);
-
-	        // Lock the current month's ledger
-	        ledger.setLocked(true);
-
-	        // Save the updated ledger
-	        ledgerRepository.save(ledger);
-
-	        // If principal amount is still remaining, calculate the ledger for the next month
-	        if (principalAmount > 0) {
-	            calculateNextMonthLedger(ledger.getBorrower().getId(), principalAmount, ledger.getInterestAmount() - interestPaid);
-	        }
-	    }
+        return borrowerDoc;
+    }
 
 
-	    
-	    @Transactional
-	    public void calculateNextMonthLedger(Long borrowerId, double updatedPrincipalAmount, double remainingInterest) {
-	        BorrowerDoc borrower = borrowerRepository.findById(borrowerId)
-	                .orElseThrow(() -> new RuntimeException("Borrower not found"));
 
-	        Calendar start = Calendar.getInstance();
-	        int currentMonth = start.get(Calendar.MONTH);
-	        int currentYear = start.get(Calendar.YEAR);
-	        start.set(Calendar.DAY_OF_MONTH, 1); // Start from the beginning of the month
-	        start.add(Calendar.MONTH, 1); // Move to the next month
+    @Override
+    @Transactional
+    public LedgerUpdateResponse updateInterestPaid(LedgerUpdateRequest request) {
+        LedgerCal ledger = ledgerRepository.findById(request.getLedgerId())
+                .orElseThrow(() -> new RuntimeException("Ledger not found"));
 
-	        int nextMonth = start.get(Calendar.MONTH);
-	        int nextYear = start.get(Calendar.YEAR);
-	        String month = new SimpleDateFormat("MMMM yyyy").format(start.getTime());
+        if (ledger.isLocked()) {
+            throw new RuntimeException("Ledger entry is locked and cannot be modified.");
+        }
 
-	        double interestRate = borrower.getInterestRate();
+        BigDecimal interestPaid = BigDecimal.valueOf(request.getInterestPaid());
+        BigDecimal interestAmount = BigDecimal.valueOf(ledger.getInterestAmount());
+        BigDecimal principalAmount = BigDecimal.valueOf(ledger.getPrincipalAmount());
+        BigDecimal excessAmount = interestPaid.subtract(interestAmount);
 
-	        // Calculate interest for the next month
-	        double monthlyInterestAmount = (updatedPrincipalAmount * (interestRate / 100)) / 12;
-	        double totalInterestAmount = monthlyInterestAmount + remainingInterest; // Include remaining interest
+        if (excessAmount.compareTo(BigDecimal.ZERO) > 0) {
+            principalAmount = principalAmount.subtract(excessAmount);
+            ledger.setStatus(principalAmount.compareTo(BigDecimal.ZERO) <= 0 ? "CLOSED" : "PAID");
+        } else {
+            ledger.setStatus("DUE");
+            ledger.setInterestAmount(interestAmount.subtract(interestPaid).setScale(2, RoundingMode.HALF_UP).doubleValue());
+        }
 
-	        LedgerCal newLedger = new LedgerCal();
-	        newLedger.setPrincipalAmount(updatedPrincipalAmount);
-	        newLedger.setInterestAmount(totalInterestAmount);
-	        newLedger.setMonth(month);
-	        newLedger.setDays(start.getActualMaximum(Calendar.DAY_OF_MONTH));
-	        newLedger.setInterestPaid(0.0); // Set to 0 initially
-	        newLedger.setStatus("DUE"); // Set initial status
-	        newLedger.setLocked(false); // Initially unlocked
-	        newLedger.setBorrower(borrower);
+        ledger.setPrincipalAmount(principalAmount.setScale(2, RoundingMode.HALF_UP).doubleValue());
+        ledger.setInterestPaid(interestPaid.setScale(2, RoundingMode.HALF_UP).doubleValue());
+        ledger.setLocked(true);
 
-	        ledgerRepository.save(newLedger);
-	    }
+        ledgerRepository.save(ledger);
 
-	    
-//	    @Transactional
-//	    public void deleteBorrowersByCustomerId(Long customerId ) {
-//	        // Check if the customer exists
-//	        if (customerRepository.existsById(customerId)) {
-//	            borrowerRepository.deleteByCustomerDoc_Id(customerId);
-//	        } else {
-//	            throw new RuntimeException("Customer not found with id: " + customerId);
-//	        }
-//	    }
-	    
-	    @Override
-	    public BorrowerDoc getBorrowerById(Long borrowerId) {
-	        return borrowerRepository.findById(borrowerId)
-	                .orElseThrow(() -> new RuntimeException("Borrower not found"));
-	    }
+        // Calculate next month's ledger
+        if (principalAmount.compareTo(BigDecimal.ZERO) > 0) {
+            calculateNextMonthLedger(ledger.getBorrower().getId(), principalAmount.doubleValue(), interestPaid.subtract(interestAmount).doubleValue(), ledger.getMonth());
+        }
 
-	    @Override
-	    public List<LedgerCal> getLedgerByBorrowerId(Long borrowerId) {
-	        BorrowerDoc borrower = borrowerRepository.findById(borrowerId)
-	                .orElseThrow(() -> new RuntimeException("Borrower not found"));
-	        return ledgerRepository.findByBorrower(borrower);
-	    }
-	    
-	    @Override
-	    public LedgerCal getLedgerByBorrowerAndLedgerId(Long borrowerId, Long ledgerId) {
-	        Optional<BorrowerDoc> borrowerOpt = borrowerRepository.findById(borrowerId);
-	        if (borrowerOpt.isPresent()) {
-	            BorrowerDoc borrower = borrowerOpt.get();
-	            return ledgerRepository.findByBorrowerAndId(borrower, ledgerId);
-	        } else {
-	            throw new RuntimeException("Borrower not found");
-	        }
-	    }
+        // Create response
+        LedgerUpdateResponse response = new LedgerUpdateResponse();
+        response.setId(ledger.getId());
+        response.setMonth(ledger.getMonth());
+        response.setPrincipalAmount(ledger.getPrincipalAmount());
+        response.setInterestAmount(ledger.getInterestAmount());
+        response.setInterestPaid(ledger.getInterestPaid());
+        response.setStatus(ledger.getStatus());
+        response.setLocked(ledger.isLocked());
 
-	    public List<BorrowerRequest> getBorrowersForCustomer(Long customerId) {
-	        Optional<CustomerDoc> customerOptional = customerRepository.findById(customerId);
-
-	        if (customerOptional.isPresent()) {
-	            CustomerDoc customer = customerOptional.get();
-	            return customer.getBorrowers().stream()
-	                    .map(borrower -> {
-	                        BorrowerRequest br = new BorrowerRequest();
-	                        br.setBorrowerName(borrower.getBorrowerName());
-	                        br.setPrincipalAmount(borrower.getPrincipalAmount());
-	                        br.setInterestRate(borrower.getInterestRate());
-	                        br.setStatus(borrower.getStatus());
-	                        br.setId(borrower.getId());
-	                        br.setBorrowedDate(borrower.getBorrowedDate());
-	                        br.setCreditBasis(borrower.getCreditBasis());
-	                        br.setCreditStatus(borrower.getCreditStatus());
-	                        br.setEmail(borrower.getEmail());
-	                        br.setEndDate(borrower.getEndDate());
-	                       br.setPhoneNumber(borrower.getPhoneNumber());
-	                       br.setTimePeriodNumber(borrower.getTimePeriodNumber());
-	                       br.setTimePeriodUnit(borrower.getTimePeriodUnit());
-	                        return br;
-	                    })
-	                    .collect(Collectors.toList());
-	        } else {
-	            throw new RuntimeException("Customer not found");
-	        }
-	    }		
-	    @Override
-	    @Transactional
-	    public void deleteLedgerByBorrowerId(Long borrowerId, Long ledgerId) {
-	        // Find the ledger entry by borrower ID and ledger ID
-	        LedgerCal ledger = ledgerRepository.findByIdAndBorrowerId(ledgerId, borrowerId)
-	                .orElseThrow(() -> new IllegalArgumentException("Ledger entry not found for the given borrower"));
-
-	        // Delete the ledger entry
-	        ledgerRepository.delete(ledger);
-	    }
+        return response;
+    }
 
 
+
+    @Transactional
+    public void calculateNextMonthLedger(Long borrowerId, double principalAmount, double excessInterestPaid, String currentMonth) {
+        BorrowerDoc borrower = borrowerRepository.findById(borrowerId)
+                .orElseThrow(() -> new RuntimeException("Borrower not found"));
+
+        // Calculate the next month
+        Calendar nextMonthCal = Calendar.getInstance();
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("MMMM yyyy");
+            nextMonthCal.setTime(sdf.parse(currentMonth));
+        } catch (Exception e) {
+            throw new RuntimeException("Error parsing month string: " + currentMonth, e);
+        }
+
+        nextMonthCal.add(Calendar.MONTH, 1);  // Move to next month
+        String nextMonth = new SimpleDateFormat("MMMM yyyy").format(nextMonthCal.getTime());
+        int daysInNextMonth = nextMonthCal.getActualMaximum(Calendar.DAY_OF_MONTH);  // Days in the next month
+
+        // Calculate interest amount for the next full month
+        BigDecimal principalAmountBD = BigDecimal.valueOf(principalAmount);
+        BigDecimal interestRate = BigDecimal.valueOf(borrower.getInterestRate()).divide(BigDecimal.valueOf(100));
+        BigDecimal dailyInterestRate = interestRate.divide(BigDecimal.valueOf(365), 6, RoundingMode.HALF_UP);
+        BigDecimal monthlyInterestAmount = principalAmountBD.multiply(dailyInterestRate).multiply(BigDecimal.valueOf(daysInNextMonth)).setScale(2, RoundingMode.HALF_UP);
+
+        // Check if the ledger for the next month already exists
+        LedgerCal nextMonthLedger = ledgerRepository.findByBorrowerAndMonth(borrower, nextMonth)
+                .orElseGet(() -> {
+                    LedgerCal newLedger = new LedgerCal();
+                    newLedger.setMonth(nextMonth);
+                    newLedger.setBorrower(borrower);
+                    newLedger.setLocked(false);
+                    ledgerRepository.save(newLedger);
+                    return newLedger;
+                });
+
+        nextMonthLedger.setPrincipalAmount(principalAmountBD.setScale(2, RoundingMode.HALF_UP).doubleValue());
+        nextMonthLedger.setInterestAmount(monthlyInterestAmount.doubleValue());
+        nextMonthLedger.setDays(daysInNextMonth);  // Store total days in the next month
+        nextMonthLedger.setInterestPaid(0.0);
+        nextMonthLedger.setStatus("DUE");
+
+        ledgerRepository.save(nextMonthLedger);
+    }
+
+
+
+    
+    private String getNextMonth(String currentMonth) {
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("MMMM yyyy");
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(sdf.parse(currentMonth));
+
+            // Move to the next month
+            cal.add(Calendar.MONTH, 1);
+
+            return sdf.format(cal.getTime());
+        } catch (Exception e) {
+            throw new RuntimeException("Error parsing month string: " + currentMonth, e);
+        }
+    }
+
+    @Override
+    public BorrowerDoc getBorrowerById(Long borrowerId) {
+        return borrowerRepository.findById(borrowerId)
+                .orElseThrow(() -> new RuntimeException("Borrower not found"));
+    }
+
+    @Override
+    public List<LedgerCal> getLedgerByBorrowerId(Long borrowerId) {
+        BorrowerDoc borrower = borrowerRepository.findById(borrowerId)
+                .orElseThrow(() -> new RuntimeException("Borrower not found"));
+        return ledgerRepository.findByBorrower(borrower);
+    }
+
+    @Override
+    public LedgerCal getLedgerByBorrowerAndLedgerId(Long borrowerId, Long ledgerId) {
+        Optional<BorrowerDoc> borrowerOpt = borrowerRepository.findById(borrowerId);
+        if (borrowerOpt.isPresent()) {
+            BorrowerDoc borrower = borrowerOpt.get();
+            return ledgerRepository.findByBorrowerAndId(borrower, ledgerId);
+        } else {
+            throw new RuntimeException("Borrower not found");
+        }
+    }
+
+    @Override
+    @Transactional
+    public void deleteLedgerByBorrowerId(Long borrowerId, Long ledgerId) {
+        LedgerCal ledger = ledgerRepository.findByIdAndBorrowerId(ledgerId, borrowerId)
+                .orElseThrow(() -> new IllegalArgumentException("Ledger entry not found for the given borrower"));
+        ledgerRepository.delete(ledger);
+    }
+
+    public List<BorrowerRequest> getBorrowersForCustomer(Long customerId) {
+        Optional<CustomerDoc> customerOptional = customerRepository.findById(customerId);
+
+        if (customerOptional.isPresent()) {
+            CustomerDoc customer = customerOptional.get();
+            return customer.getBorrowers().stream()
+                    .map(borrower -> {
+                        BorrowerRequest br = new BorrowerRequest();
+                        br.setBorrowerName(borrower.getBorrowerName());
+                        br.setPrincipalAmount(borrower.getPrincipalAmount());
+                        br.setInterestRate(borrower.getInterestRate());
+                        br.setStatus(borrower.getStatus());
+                        br.setId(borrower.getId());
+                        br.setBorrowedDate(borrower.getBorrowedDate());
+                        br.setCreditBasis(borrower.getCreditBasis());
+                        br.setCreditStatus(borrower.getCreditStatus());
+                        br.setEmail(borrower.getEmail());
+                        br.setEndDate(borrower.getEndDate());
+                        br.setPhoneNumber(borrower.getPhoneNumber());
+                        br.setTimePeriodNumber(borrower.getTimePeriodNumber());
+                        br.setTimePeriodUnit(borrower.getTimePeriodUnit());
+                        return br;
+                    })
+                    .collect(Collectors.toList());
+        } else {
+            throw new RuntimeException("Customer not found");
+        }
+    }
 }

@@ -7,11 +7,12 @@ import com.sharp.noteIt.model.BorrowerRequest;
 import com.sharp.noteIt.model.CustomerDoc;
 import com.sharp.noteIt.model.LedgerCal;
 import com.sharp.noteIt.model.LedgerUpdateRequest;
+import com.sharp.noteIt.model.LedgerUpdateResponse;
 
 public interface LedgerService {
 	  CustomerDoc addBorrowerToCustomer(Long customerId, BorrowerDoc borrowerDoc);
 	    BorrowerDoc calculateAndUpdateLedger(Long borrowerId);
-	    void updateInterestPaid(LedgerUpdateRequest request);
+	    LedgerUpdateResponse updateInterestPaid(LedgerUpdateRequest request);
 	    BorrowerDoc getBorrowerById(Long borrowerId);
 	    List<LedgerCal> getLedgerByBorrowerId(Long borrowerId);
 	    LedgerCal getLedgerByBorrowerAndLedgerId(Long borrowerId, Long ledgerId);
