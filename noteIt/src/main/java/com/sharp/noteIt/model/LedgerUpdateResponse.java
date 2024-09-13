@@ -8,6 +8,20 @@ public class LedgerUpdateResponse {
     private double interestPaid;
     private String status;
     private boolean locked;
+    
+    
+	public LedgerUpdateResponse(Long id, String month, double principalAmount, double interestAmount,
+			double interestPaid, String status, boolean locked) {
+		super();
+		this.id = id;
+		this.month = month;
+		this.principalAmount = principalAmount;
+		this.interestAmount = interestAmount;
+		this.interestPaid = interestPaid;
+		this.status = status;
+		this.locked = locked;
+	}
+	
 	public Long getId() {
 		return id;
 	}

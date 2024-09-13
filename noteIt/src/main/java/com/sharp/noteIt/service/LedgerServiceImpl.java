@@ -3,6 +3,8 @@ package com.sharp.noteIt.service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -58,31 +60,109 @@ public class LedgerServiceImpl implements LedgerService {
         Calendar start = Calendar.getInstance();
         start.setTime(borrowerDoc.getBorrowedDate());
 
-        int startDay = start.get(Calendar.DAY_OF_MONTH);  // Day of the month loan started
-        int lastDayOfMonth = start.getActualMaximum(Calendar.DAY_OF_MONTH);  // Last day of the month
-        int daysLeftInMonth = lastDayOfMonth - startDay + 1;  // Days left from start to the end of the month
+        int startDay = start.get(Calendar.DAY_OF_MONTH);
+        int lastDayOfMonth = start.getActualMaximum(Calendar.DAY_OF_MONTH);
+        int daysInMonth = lastDayOfMonth;
+
+        int daysActiveInMonth = lastDayOfMonth - startDay + 1;
 
         String month = new SimpleDateFormat("MMMM yyyy").format(start.getTime());
         BigDecimal principalAmount = BigDecimal.valueOf(borrowerDoc.getPrincipalAmount());
-        BigDecimal interestRate = BigDecimal.valueOf(borrowerDoc.getInterestRate()).divide(BigDecimal.valueOf(100));
+        BigDecimal interestRate = BigDecimal.valueOf(borrowerDoc.getInterestRate());
 
-        // Interest for remaining days in the starting month
-        BigDecimal dailyInterestRate = interestRate.divide(BigDecimal.valueOf(365), 6, RoundingMode.HALF_UP);
-        BigDecimal interestAmount = principalAmount.multiply(dailyInterestRate).multiply(BigDecimal.valueOf(daysLeftInMonth)).setScale(2, RoundingMode.HALF_UP);
+        // Calculate interest for the active days in the month
+        BigDecimal interestAmount = principalAmount
+            .multiply(interestRate)
+            .divide(BigDecimal.valueOf(100), 6, RoundingMode.HALF_UP)
+            .multiply(BigDecimal.valueOf(daysActiveInMonth))
+            .divide(BigDecimal.valueOf(daysInMonth), 2, RoundingMode.HALF_UP);
 
+        // Create the first ledger entry
         LedgerCal ledger = new LedgerCal();
         ledger.setPrincipalAmount(principalAmount.setScale(2, RoundingMode.HALF_UP).doubleValue());
         ledger.setInterestAmount(interestAmount.doubleValue());
         ledger.setMonth(month);
-        ledger.setDays(daysLeftInMonth);  // Store days left in the current month
-        ledger.setInterestPaid(0.0);  // Initial interest paid is 0
+        ledger.setDays(daysActiveInMonth);
+        ledger.setInterestPaid(0.0);
         ledger.setStatus("DUE");
         ledger.setBorrower(borrowerDoc);
         ledger.setLocked(false);
 
         ledgerRepository.save(ledger);
+
+        // Generate subsequent ledger entries
+        LocalDate startDate = start.getTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDate().plusMonths(1);
+        LocalDate endDate = LocalDate.now();
+        calculateAndGenerateSubsequentLedger(borrowerDoc, startDate, endDate);
     }
 
+
+    private void calculateAndGenerateSubsequentLedger(BorrowerDoc borrowerDoc, LocalDate startDate, LocalDate endDate) {
+        Calendar start = Calendar.getInstance();
+        start.set(startDate.getYear(), startDate.getMonthValue() - 1, 1);
+
+        Calendar end = Calendar.getInstance();
+        end.set(endDate.getYear(), endDate.getMonthValue() - 1, endDate.getDayOfMonth());
+
+        BigDecimal principalAmount = BigDecimal.valueOf(borrowerDoc.getPrincipalAmount());
+        BigDecimal interestRate = BigDecimal.valueOf(borrowerDoc.getInterestRate());
+
+        while (start.before(end)) {
+            int daysInMonth = start.getActualMaximum(Calendar.DAY_OF_MONTH);
+
+            BigDecimal interestAmount = principalAmount
+                .multiply(interestRate)
+                .divide(BigDecimal.valueOf(100), 6, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(daysInMonth))
+                .divide(BigDecimal.valueOf(daysInMonth), 2, RoundingMode.HALF_UP);
+
+            LedgerCal ledger = new LedgerCal();
+            ledger.setPrincipalAmount(principalAmount.setScale(2, RoundingMode.HALF_UP).doubleValue());
+            ledger.setInterestAmount(interestAmount.doubleValue());
+            ledger.setMonth(new SimpleDateFormat("MMMM yyyy").format(start.getTime()));
+            ledger.setDays(daysInMonth);
+            ledger.setInterestPaid(0.0);
+            ledger.setStatus("DUE");
+            ledger.setBorrower(borrowerDoc);
+            ledger.setLocked(false);
+
+            ledgerRepository.save(ledger);
+
+            start.add(Calendar.MONTH, 1);
+        }
+    }
+
+
+    
+    private void updateLedgerWithPayments(BorrowerDoc borrowerDoc, double paymentAmount) {
+        List<LedgerCal> ledgers = ledgerRepository.findByBorrower(borrowerDoc);
+        BigDecimal totalInterestPaid = BigDecimal.valueOf(paymentAmount);
+        
+        for (LedgerCal ledger : ledgers) {
+            if (totalInterestPaid.compareTo(BigDecimal.ZERO) > 0) {
+                BigDecimal interestDue = BigDecimal.valueOf(ledger.getInterestAmount());
+                BigDecimal interestPaid = BigDecimal.valueOf(ledger.getInterestPaid());
+                BigDecimal interestRemaining = interestDue.subtract(interestPaid);
+
+                if (totalInterestPaid.compareTo(interestRemaining) >= 0) {
+                    ledger.setInterestPaid(interestDue.doubleValue());
+                    totalInterestPaid = totalInterestPaid.subtract(interestRemaining);
+
+                    BigDecimal excessPayment = totalInterestPaid;
+                    if (excessPayment.compareTo(BigDecimal.ZERO) > 0) {
+                        BigDecimal principalAmount = BigDecimal.valueOf(ledger.getPrincipalAmount());
+                        principalAmount = principalAmount.subtract(excessPayment);
+                        ledger.setPrincipalAmount(principalAmount.doubleValue());
+                    }
+                } else {
+                    ledger.setInterestPaid(interestPaid.add(totalInterestPaid).doubleValue());
+                    totalInterestPaid = BigDecimal.ZERO;
+                }
+                ledger.setStatus(totalInterestPaid.compareTo(BigDecimal.ZERO) > 0 ? "DUE" : "PAID");
+                ledgerRepository.save(ledger);
+            }
+        }
+    }
     @Override
     @Transactional
     public BorrowerDoc calculateAndUpdateLedger(Long borrowerId) {
@@ -96,7 +176,6 @@ public class LedgerServiceImpl implements LedgerService {
 
         LedgerCal currentMonthLedger = ledgerRepository.findByBorrowerAndMonth(borrowerDoc, currentMonth)
                 .orElseGet(() -> {
-                    // Create a new ledger if not exists
                     LedgerCal newLedger = new LedgerCal();
                     newLedger.setMonth(currentMonth);
                     newLedger.setBorrower(borrowerDoc);
@@ -107,7 +186,22 @@ public class LedgerServiceImpl implements LedgerService {
 
         BigDecimal principalAmount = BigDecimal.valueOf(borrowerDoc.getPrincipalAmount());
         BigDecimal interestRate = BigDecimal.valueOf(borrowerDoc.getInterestRate()).divide(BigDecimal.valueOf(100));
-        BigDecimal monthlyInterestAmount = principalAmount.multiply(interestRate).divide(BigDecimal.valueOf(12), 2, RoundingMode.HALF_UP);
+        
+        // Calculate number of days in the current month
+        Calendar currentCalendar = Calendar.getInstance();
+        currentCalendar.setTime(new Date());
+        int daysInMonth = currentCalendar.getActualMaximum(Calendar.DAY_OF_MONTH);
+
+        // Calculate the number of days the loan has been active in the current month
+        Calendar borrowedDate = Calendar.getInstance();
+        borrowedDate.setTime(borrowerDoc.getBorrowedDate());
+        int startDay = borrowedDate.get(Calendar.DAY_OF_MONTH);
+        int daysActiveInMonth = daysInMonth - startDay + 1;
+
+        // Calculate monthly interest amount based on the number of days
+        BigDecimal dailyInterestRate = interestRate.divide(BigDecimal.valueOf(365), 8, RoundingMode.HALF_UP);
+        BigDecimal monthlyInterestAmount = principalAmount.multiply(dailyInterestRate).multiply(BigDecimal.valueOf(daysActiveInMonth));
+
         BigDecimal interestPaid = BigDecimal.valueOf(currentMonthLedger.getInterestPaid());
         BigDecimal remainingInterest = monthlyInterestAmount.subtract(interestPaid);
         BigDecimal excessInterestPaid = interestPaid.subtract(monthlyInterestAmount);
@@ -123,12 +217,10 @@ public class LedgerServiceImpl implements LedgerService {
         currentMonthLedger.setPrincipalAmount(principalAmount.setScale(2, RoundingMode.HALF_UP).doubleValue());
         ledgerRepository.save(currentMonthLedger);
 
-        // Calculate ledger for the next month
         calculateNextMonthLedger(borrowerId, principalAmount.doubleValue(), excessInterestPaid.doubleValue(), currentMonth);
 
         return borrowerDoc;
     }
-
 
 
     @Override
@@ -160,71 +252,44 @@ public class LedgerServiceImpl implements LedgerService {
 
         ledgerRepository.save(ledger);
 
-        // Calculate next month's ledger
         if (principalAmount.compareTo(BigDecimal.ZERO) > 0) {
             calculateNextMonthLedger(ledger.getBorrower().getId(), principalAmount.doubleValue(), interestPaid.subtract(interestAmount).doubleValue(), ledger.getMonth());
         }
 
-        // Create response
-        LedgerUpdateResponse response = new LedgerUpdateResponse();
-        response.setId(ledger.getId());
-        response.setMonth(ledger.getMonth());
-        response.setPrincipalAmount(ledger.getPrincipalAmount());
-        response.setInterestAmount(ledger.getInterestAmount());
-        response.setInterestPaid(ledger.getInterestPaid());
-        response.setStatus(ledger.getStatus());
-        response.setLocked(ledger.isLocked());
-
-        return response;
+        return new LedgerUpdateResponse(
+        	    ledger.getId(),
+        	    ledger.getMonth(),
+        	    ledger.getPrincipalAmount(),
+        	    ledger.getInterestAmount(),
+        	    ledger.getInterestPaid(),
+        	    ledger.getStatus(),
+        	    ledger.isLocked() // Assuming `isLocked` is a method in your `Ledger` class
+        	);
     }
 
 
-
-    @Transactional
-    public void calculateNextMonthLedger(Long borrowerId, double principalAmount, double excessInterestPaid, String currentMonth) {
-        BorrowerDoc borrower = borrowerRepository.findById(borrowerId)
+    private void calculateNextMonthLedger(Long borrowerId, double updatedPrincipalAmount, double excessInterestPaid, String currentMonth) {
+        BorrowerDoc borrowerDoc = borrowerRepository.findById(borrowerId)
                 .orElseThrow(() -> new RuntimeException("Borrower not found"));
 
-        // Calculate the next month
-        Calendar nextMonthCal = Calendar.getInstance();
-        try {
-            SimpleDateFormat sdf = new SimpleDateFormat("MMMM yyyy");
-            nextMonthCal.setTime(sdf.parse(currentMonth));
-        } catch (Exception e) {
-            throw new RuntimeException("Error parsing month string: " + currentMonth, e);
-        }
+        Calendar nextMonth = Calendar.getInstance();
+        nextMonth.add(Calendar.MONTH, 1);
 
-        nextMonthCal.add(Calendar.MONTH, 1);  // Move to next month
-        String nextMonth = new SimpleDateFormat("MMMM yyyy").format(nextMonthCal.getTime());
-        int daysInNextMonth = nextMonthCal.getActualMaximum(Calendar.DAY_OF_MONTH);  // Days in the next month
+        BigDecimal interestRate = BigDecimal.valueOf(borrowerDoc.getInterestRate()).divide(BigDecimal.valueOf(100));
+        BigDecimal principalAmount = BigDecimal.valueOf(updatedPrincipalAmount);
+        BigDecimal monthlyInterestAmount = principalAmount.multiply(interestRate).divide(BigDecimal.valueOf(12), 2, RoundingMode.HALF_UP);
 
-        // Calculate interest amount for the next full month
-        BigDecimal principalAmountBD = BigDecimal.valueOf(principalAmount);
-        BigDecimal interestRate = BigDecimal.valueOf(borrower.getInterestRate()).divide(BigDecimal.valueOf(100));
-        BigDecimal dailyInterestRate = interestRate.divide(BigDecimal.valueOf(365), 6, RoundingMode.HALF_UP);
-        BigDecimal monthlyInterestAmount = principalAmountBD.multiply(dailyInterestRate).multiply(BigDecimal.valueOf(daysInNextMonth)).setScale(2, RoundingMode.HALF_UP);
+        LedgerCal nextLedger = new LedgerCal();
+        nextLedger.setPrincipalAmount(principalAmount.setScale(2, RoundingMode.HALF_UP).doubleValue());
+        nextLedger.setInterestAmount(monthlyInterestAmount.setScale(2, RoundingMode.HALF_UP).doubleValue());
+        nextLedger.setInterestPaid(0.0);
+        nextLedger.setMonth(new SimpleDateFormat("MMMM yyyy").format(nextMonth.getTime()));
+        nextLedger.setBorrower(borrowerDoc);
+        nextLedger.setLocked(false);
+        nextLedger.setStatus("DUE");
 
-        // Check if the ledger for the next month already exists
-        LedgerCal nextMonthLedger = ledgerRepository.findByBorrowerAndMonth(borrower, nextMonth)
-                .orElseGet(() -> {
-                    LedgerCal newLedger = new LedgerCal();
-                    newLedger.setMonth(nextMonth);
-                    newLedger.setBorrower(borrower);
-                    newLedger.setLocked(false);
-                    ledgerRepository.save(newLedger);
-                    return newLedger;
-                });
-
-        nextMonthLedger.setPrincipalAmount(principalAmountBD.setScale(2, RoundingMode.HALF_UP).doubleValue());
-        nextMonthLedger.setInterestAmount(monthlyInterestAmount.doubleValue());
-        nextMonthLedger.setDays(daysInNextMonth);  // Store total days in the next month
-        nextMonthLedger.setInterestPaid(0.0);
-        nextMonthLedger.setStatus("DUE");
-
-        ledgerRepository.save(nextMonthLedger);
+        ledgerRepository.save(nextLedger);
     }
-
-
 
     
     private String getNextMonth(String currentMonth) {
