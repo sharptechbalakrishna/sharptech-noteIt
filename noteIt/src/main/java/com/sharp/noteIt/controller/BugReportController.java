@@ -8,27 +8,46 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.sharp.noteIt.model.BugReport;
+import com.sharp.noteIt.model.BugReportRequest;
+import com.sharp.noteIt.service.EmailService;
 
 
 @RestController
 public class BugReportController {
 	
+//	@Autowired
+//    private JavaMailSender mailSender;
+//
+//    @PostMapping("/bugreport")
+//    public String sendBugReport(@RequestBody BugReport report) {
+//        try {
+//            SimpleMailMessage message = new SimpleMailMessage();
+//            message.setTo("sharptechpriyachowdhary@gmail.com");  // Recipient email
+//            message.setSubject("Bug Report: " + report.getTitle());
+//            message.setText("Description: " + report.getDescription());
+//
+//            mailSender.send(message);
+//            return "Bug report sent successfully!";
+//        } catch (Exception e) {
+//            return "Error while sending bug report: " + e.getMessage();
+//        }
+//    }
+	
+	
 	@Autowired
-    private JavaMailSender mailSender;
+    private EmailService emailService;
 
-    @PostMapping("/bugreport")
-    public String sendBugReport(@RequestBody BugReport report) {
-        try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setTo("sharptechpriyachowdhary@gmail.com");  // Recipient email
-            message.setSubject("Bug Report: " + report.getTitle());
-            message.setText("Description: " + report.getDescription());
+    @PostMapping("/send-bug-report")
+    public String sendBugReport(@RequestBody BugReportRequest bugReportRequest) {
+        String fromEmail = bugReportRequest.getEmail();
+        String bugMessage = bugReportRequest.getBugMessage();
+        
+        String toEmail = "sharptechpriyachowdhary@gmail.com";  // Your receiver's email
+        String subject = "Bug Report from " + fromEmail;
 
-            mailSender.send(message);
-            return "Bug report sent successfully!";
-        } catch (Exception e) {
-            return "Error while sending bug report: " + e.getMessage();
-        }
+        emailService.sendBugReport(fromEmail, toEmail, subject, bugMessage);
+
+        return "Bug report sent successfully";
     }
 
 }
