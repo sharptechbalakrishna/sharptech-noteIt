@@ -41,11 +41,12 @@ public class BugReportController {
     public String sendBugReport(@RequestBody BugReportRequest bugReportRequest) {
         String fromEmail = bugReportRequest.getEmail();
         String bugMessage = bugReportRequest.getBugMessage();
+        String title = bugReportRequest.getTitle();  // Extract title from the request
         
         String toEmail = "sharptechpriyachowdhary@gmail.com";  // Your receiver's email
-        String subject = "Bug Report from " + fromEmail;
+        String subject = "Bug Report: " + title;  // Use the title in the subject
 
-        emailService.sendBugReport(fromEmail, toEmail, subject, bugMessage);
+        emailService.sendBugReport(fromEmail, toEmail, subject, title, bugMessage);
 
         return "Bug report sent successfully";
     }
