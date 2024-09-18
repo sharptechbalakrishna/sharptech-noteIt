@@ -6,6 +6,8 @@ import java.util.Optional;
 import java.util.Random;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -17,6 +19,8 @@ import com.sharp.noteIt.model.ReqRes;
 import com.sharp.noteIt.repo.CustomerRepository;
 import com.sharp.noteIt.repo.OtpRepository;
 
+import jakarta.transaction.Transactional;
+
 @Service
 public class OtpServiceImpl implements OtpService {
 
@@ -26,11 +30,20 @@ public class OtpServiceImpl implements OtpService {
     @Autowired
     private CustomerRepository customerRepository;
 
+    @Autowired
+    private JavaMailSender javaMailSender; // Add JavaMailSender for email sending
+
     @Override
+    @Transactional
     public ReqRes generateAndSendOtp(String email) {
+        // Delete any existing OTP associated with this email before generating a new one
+        otpRepository.deleteByEmail(email);
+
+        // Generate a new OTP
         String otpValue = generateOtp();
         LocalDateTime expiryTime = LocalDateTime.now().plusMinutes(5); // OTP valid for 5 minutes
 
+        // Create a new OTP object and save it
         Otp otp = new Otp();
         otp.setEmail(email);
         otp.setOtp(otpValue);
@@ -38,49 +51,46 @@ public class OtpServiceImpl implements OtpService {
 
         otpRepository.save(otp);
 
-        // Simulate sending OTP (In real implementation, integrate with email/SMS service)
-        System.out.println("OTP sent to email: " + otpValue);
-
-        return new ReqRes(200, "OTP sent successfully");
+        // Send the OTP via email
+        try {
+            sendOtpEmail(email, otpValue); // Send OTP to the provided email
+            return new ReqRes(200, "OTP sent successfully to email: " + email);
+        } catch (Exception e) {
+            return new ReqRes(500, "Failed to send OTP email: " + e.getMessage());
+        }
     }
 
     @Override
+    @Transactional
     public boolean validateOtp(String email, String otp) {
         Otp storedOtp = otpRepository.findByEmailAndOtp(email, otp);
         if (storedOtp != null && storedOtp.getExpirydate().isAfter(LocalDateTime.now())) {
-            otpRepository.delete(storedOtp); // OTP is used and should be removed
+            otpRepository.delete(storedOtp); // OTP is valid and should be removed after use
             return true;
         }
         return false;
     }
 
-    private String generateOtp() {
-        return String.format("%04d", new Random().nextInt(10000));
-    }
-
     @Override
+    @Transactional
     public CustomerDoc getCustomerByEmail(String email) {
         List<CustomerDoc> customers = customerRepository.findByEmail(email);
         if (customers.isEmpty()) {
-            return null; // No customer found with this email
+            return null;
         }
-        if (customers.size() > 1) {
-            // Handle the case where multiple customers are found
-            // This could involve logging the issue, notifying admins, or resolving the conflict
-            System.err.println("Warning: Multiple customers found for email: " + email);
-            // Optionally, return null or handle according to your business logic
-            // You might also consider returning the first customer or raising an exception if needed
-        }
-        return customers.get(0); // Return the first customer if found
+        return customers.get(0); // Return the first matching customer
     }
+
     @Autowired
     private BCryptPasswordEncoder bCryptPasswordEncoder;
+
     @Override
+    @Transactional
     public void changePassword(Long customerId, String oldPassword, String newPassword, String confirmPassword) {
         CustomerDoc customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> new RuntimeException("No customer found with ID: " + customerId));
 
-        // Check if old password matches
+        // Verify old password
         if (!bCryptPasswordEncoder.matches(oldPassword, customer.getPassword())) {
             throw new RuntimeException("Old password is incorrect");
         }
@@ -90,8 +100,22 @@ public class OtpServiceImpl implements OtpService {
             throw new RuntimeException("New password and confirm password do not match");
         }
 
-        // Set the new password
+        // Set and save the new password
         customer.setPassword(bCryptPasswordEncoder.encode(newPassword));
         customerRepository.save(customer);
+    }
+
+    // Generate a 4-digit OTP
+    private String generateOtp() {
+        return String.format("%04d", new Random().nextInt(10000));
+    }
+
+    // Method to send OTP to the user's email
+    private void sendOtpEmail(String email, String otpValue) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(email);
+        message.setSubject("Your OTP Code");
+        message.setText("Your OTP code is: " + otpValue + ". Please use this code to proceed.");
+        javaMailSender.send(message);
     }
 }

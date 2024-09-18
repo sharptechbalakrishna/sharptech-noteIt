@@ -9,4 +9,6 @@ import com.sharp.noteIt.model.Otp;
 public interface OtpRepository extends JpaRepository<Otp, Long>{
 	Otp findByEmailAndOtp(String email, String otp);
 	
+	    void deleteByEmail(String email);
+	
 }

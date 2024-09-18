@@ -15,7 +15,6 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 
 @RestController
-//@RequestMapping("/api/auth")
 public class OtpController {
 
     @Autowired
@@ -27,6 +26,7 @@ public class OtpController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    // Forgot password - Generates OTP and sends it to the provided email
     @PostMapping("/forgot-password")
     public ResponseEntity<ReqRes> forgotPassword(@RequestBody Map<String, String> request) {
         String email = request.get("email");
@@ -34,6 +34,7 @@ public class OtpController {
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 
+    // Reset password - Validates OTP and allows the user to reset the password
     @PostMapping("/reset-password")
     public ResponseEntity<String> resetPassword(@RequestBody Map<String, String> request) {
         String email = request.get("email");
@@ -52,6 +53,8 @@ public class OtpController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid OTP");
         }
     }
+
+    // Change password - Requires the customer to provide the old password and new password
     @PostMapping("/change-password")
     public ResponseEntity<String> changePassword(@RequestBody ChangePasswordRequest request) {
         try {
@@ -63,4 +66,5 @@ public class OtpController {
         }
     }
 }
+
 
