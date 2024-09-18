@@ -21,10 +21,11 @@ public interface CustomerRepository extends JpaRepository<CustomerDoc, Long>{
 	CustomerDoc findByPhone(String phone);
 	@Query("SELECT c FROM CustomerDoc c WHERE c.email = :email")
 	List<CustomerDoc> findByEmail(String email);
-	 @Query("SELECT c FROM CustomerDoc c WHERE c.email = :email")
-	    CustomerDoc findSingleByEmail(@Param("email") String email);
+//	 @Query("SELECT c FROM CustomerDoc c WHERE c.email = :email")
+//	    CustomerDoc findSingleByEmail(@Param("email") String email);
 	
-	//Optional<CustomerDoc> findByemai(String email);
+	 @Query("SELECT c FROM CustomerDoc c WHERE c.email = :email")
+	    Optional<CustomerDoc> findSingleByEmail(@Param("email") String email);
 	// Optional<User> findByUsername(String username);
 	// Optional<CustomerDoc> findByPhone(String phone);
 	// Optional<CustomerDoc> findByPhoneNumber(String phone);

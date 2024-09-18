@@ -1,15 +1,12 @@
 package com.sharp.noteIt.service;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -33,9 +30,18 @@ public class OtpServiceImpl implements OtpService {
     @Autowired
     private JavaMailSender javaMailSender; // Add JavaMailSender for email sending
 
+    @Autowired
+    private BCryptPasswordEncoder bCryptPasswordEncoder;
+
     @Override
     @Transactional
     public ReqRes generateAndSendOtp(String email) {
+        // Check if the email exists in the CustomerDoc repository
+        Optional<CustomerDoc> customerOptional = customerRepository.findSingleByEmail(email);
+        if (customerOptional.isEmpty()) {
+            return new ReqRes(404, "Email does not exist.");
+        }
+
         // Delete any existing OTP associated with this email before generating a new one
         otpRepository.deleteByEmail(email);
 
@@ -74,15 +80,14 @@ public class OtpServiceImpl implements OtpService {
     @Override
     @Transactional
     public CustomerDoc getCustomerByEmail(String email) {
-        List<CustomerDoc> customers = customerRepository.findByEmail(email);
-        if (customers.isEmpty()) {
-            return null;
+        Optional<CustomerDoc> customerOpt = customerRepository.findSingleByEmail(email);
+        if (customerOpt.isPresent()) {
+            return customerOpt.get();
+        } else {
+            throw new RuntimeException("Customer not found with email: " + email);
         }
-        return customers.get(0); // Return the first matching customer
     }
 
-    @Autowired
-    private BCryptPasswordEncoder bCryptPasswordEncoder;
 
     @Override
     @Transactional
