@@ -187,6 +187,7 @@ public class LedgerServiceImpl implements LedgerService {
         BigDecimal principalAmount = BigDecimal.valueOf(borrowerDoc.getPrincipalAmount());
         BigDecimal interestRate = BigDecimal.valueOf(borrowerDoc.getInterestRate()).divide(BigDecimal.valueOf(100));
         
+        
         // Calculate number of days in the current month
         Calendar currentCalendar = Calendar.getInstance();
         currentCalendar.setTime(new Date());
@@ -200,8 +201,12 @@ public class LedgerServiceImpl implements LedgerService {
 
         // Calculate monthly interest amount based on the number of days
         BigDecimal dailyInterestRate = interestRate.divide(BigDecimal.valueOf(365), 8, RoundingMode.HALF_UP);
-        BigDecimal monthlyInterestAmount = principalAmount.multiply(dailyInterestRate).multiply(BigDecimal.valueOf(daysActiveInMonth));
-
+        //BigDecimal monthlyInterestAmount = principalAmount.multiply(dailyInterestRate).multiply(BigDecimal.valueOf(daysActiveInMonth));
+        BigDecimal monthlyInterestAmount = principalAmount
+                .multiply(interestRate)
+                .divide(BigDecimal.valueOf(100), 6, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(daysActiveInMonth))
+                .divide(BigDecimal.valueOf(daysInMonth), 2, RoundingMode.HALF_UP);
         BigDecimal interestPaid = BigDecimal.valueOf(currentMonthLedger.getInterestPaid());
         BigDecimal remainingInterest = monthlyInterestAmount.subtract(interestPaid);
         BigDecimal excessInterestPaid = interestPaid.subtract(monthlyInterestAmount);
