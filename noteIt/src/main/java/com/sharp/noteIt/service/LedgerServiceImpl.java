@@ -2,6 +2,7 @@ package com.sharp.noteIt.service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -134,35 +135,35 @@ public class LedgerServiceImpl implements LedgerService {
 
 
     
-    private void updateLedgerWithPayments(BorrowerDoc borrowerDoc, double paymentAmount) {
-        List<LedgerCal> ledgers = ledgerRepository.findByBorrower(borrowerDoc);
-        BigDecimal totalInterestPaid = BigDecimal.valueOf(paymentAmount);
-        
-        for (LedgerCal ledger : ledgers) {
-            if (totalInterestPaid.compareTo(BigDecimal.ZERO) > 0) {
-                BigDecimal interestDue = BigDecimal.valueOf(ledger.getInterestAmount());
-                BigDecimal interestPaid = BigDecimal.valueOf(ledger.getInterestPaid());
-                BigDecimal interestRemaining = interestDue.subtract(interestPaid);
-
-                if (totalInterestPaid.compareTo(interestRemaining) >= 0) {
-                    ledger.setInterestPaid(interestDue.doubleValue());
-                    totalInterestPaid = totalInterestPaid.subtract(interestRemaining);
-
-                    BigDecimal excessPayment = totalInterestPaid;
-                    if (excessPayment.compareTo(BigDecimal.ZERO) > 0) {
-                        BigDecimal principalAmount = BigDecimal.valueOf(ledger.getPrincipalAmount());
-                        principalAmount = principalAmount.subtract(excessPayment);
-                        ledger.setPrincipalAmount(principalAmount.doubleValue());
-                    }
-                } else {
-                    ledger.setInterestPaid(interestPaid.add(totalInterestPaid).doubleValue());
-                    totalInterestPaid = BigDecimal.ZERO;
-                }
-                ledger.setStatus(totalInterestPaid.compareTo(BigDecimal.ZERO) > 0 ? "DUE" : "PAID");
-                ledgerRepository.save(ledger);
-            }
-        }
-    }
+//    private void updateLedgerWithPayments(BorrowerDoc borrowerDoc, double paymentAmount) {
+//        List<LedgerCal> ledgers = ledgerRepository.findByBorrower(borrowerDoc);
+//        BigDecimal totalInterestPaid = BigDecimal.valueOf(paymentAmount);
+//        
+//        for (LedgerCal ledger : ledgers) {
+//            if (totalInterestPaid.compareTo(BigDecimal.ZERO) > 0) {
+//                BigDecimal interestDue = BigDecimal.valueOf(ledger.getInterestAmount());
+//                BigDecimal interestPaid = BigDecimal.valueOf(ledger.getInterestPaid());
+//                BigDecimal interestRemaining = interestDue.subtract(interestPaid);
+//
+//                if (totalInterestPaid.compareTo(interestRemaining) >= 0) {
+//                    ledger.setInterestPaid(interestDue.doubleValue());
+//                    totalInterestPaid = totalInterestPaid.subtract(interestRemaining);
+//
+//                    BigDecimal excessPayment = totalInterestPaid;
+//                    if (excessPayment.compareTo(BigDecimal.ZERO) > 0) {
+//                        BigDecimal principalAmount = BigDecimal.valueOf(ledger.getPrincipalAmount());
+//                        principalAmount = principalAmount.subtract(excessPayment);
+//                        ledger.setPrincipalAmount(principalAmount.doubleValue());
+//                    }
+//                } else {
+//                    ledger.setInterestPaid(interestPaid.add(totalInterestPaid).doubleValue());
+//                    totalInterestPaid = BigDecimal.ZERO;
+//                }
+//                ledger.setStatus(totalInterestPaid.compareTo(BigDecimal.ZERO) > 0 ? "DUE" : "PAID");
+//                ledgerRepository.save(ledger);
+//            }
+//        }
+//    }
     @Override
     @Transactional
     public BorrowerDoc calculateAndUpdateLedger(Long borrowerId) {
@@ -277,24 +278,49 @@ public class LedgerServiceImpl implements LedgerService {
         BorrowerDoc borrowerDoc = borrowerRepository.findById(borrowerId)
                 .orElseThrow(() -> new RuntimeException("Borrower not found"));
 
+        // Get the current month and calculate the next month
         Calendar nextMonth = Calendar.getInstance();
-        nextMonth.add(Calendar.MONTH, 1);
+        try {
+            nextMonth.setTime(new SimpleDateFormat("MMMM yyyy").parse(currentMonth)); // Parse the current month
+        } catch (Exception e) {
+            throw new RuntimeException("Error parsing month string: " + currentMonth, e);
+        }
+        
+        nextMonth.add(Calendar.MONTH, 1); // Move to the next month
 
-        BigDecimal interestRate = BigDecimal.valueOf(borrowerDoc.getInterestRate()).divide(BigDecimal.valueOf(100));
+        // Get the number of days in the next month
+        int daysInMonth = nextMonth.getActualMaximum(Calendar.DAY_OF_MONTH);
+
+        // Updated formula for interest calculation
+        BigDecimal interestRate = BigDecimal.valueOf(borrowerDoc.getInterestRate());
         BigDecimal principalAmount = BigDecimal.valueOf(updatedPrincipalAmount);
-        BigDecimal monthlyInterestAmount = principalAmount.multiply(interestRate).divide(BigDecimal.valueOf(12), 2, RoundingMode.HALF_UP);
+
+        BigDecimal interestAmount = principalAmount
+                .multiply(interestRate)
+                .divide(BigDecimal.valueOf(100), 6, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(daysInMonth))
+                .divide(BigDecimal.valueOf(daysInMonth), 2, RoundingMode.HALF_UP);
 
         LedgerCal nextLedger = new LedgerCal();
         nextLedger.setPrincipalAmount(principalAmount.setScale(2, RoundingMode.HALF_UP).doubleValue());
-        nextLedger.setInterestAmount(monthlyInterestAmount.setScale(2, RoundingMode.HALF_UP).doubleValue());
-        nextLedger.setInterestPaid(0.0);
+        nextLedger.setInterestAmount(interestAmount.setScale(2, RoundingMode.HALF_UP).doubleValue());
+        
+        // Set the interest paid as 0 for the next month (this is the fix)
+        nextLedger.setInterestPaid(0.0); // Interest paid for next month starts from 0
+        
         nextLedger.setMonth(new SimpleDateFormat("MMMM yyyy").format(nextMonth.getTime()));
         nextLedger.setBorrower(borrowerDoc);
         nextLedger.setLocked(false);
         nextLedger.setStatus("DUE");
 
+        // Set the number of days for the next ledger
+        nextLedger.setDays(daysInMonth); // Set the number of days in the next month
+
         ledgerRepository.save(nextLedger);
     }
+
+
+
 
     
     private String getNextMonth(String currentMonth) {
