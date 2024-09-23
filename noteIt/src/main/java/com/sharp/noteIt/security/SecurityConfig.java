@@ -29,7 +29,7 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .cors(Customizer.withDefaults())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/auth/login", "/auth/register","/auth/logout","/auth/updateCustomer").permitAll()
+                .requestMatchers("/auth/login", "/auth/register","/auth/logout").permitAll()
                 .requestMatchers("/reset-password","/forgot-password","/change-password").permitAll()
                 .requestMatchers("/api/sms/sendSms").authenticated()
                 .anyRequest().authenticated()
