@@ -3,13 +3,11 @@ package com.sharp.noteIt.service;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Random;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-
 import com.sharp.noteIt.model.CustomerDoc;
 import com.sharp.noteIt.model.Otp;
 import com.sharp.noteIt.model.ReqRes;

@@ -17,7 +17,7 @@ public class JWTService {
 
     private static final String SECRET_KEY = "4CCBD212EFD1E1E7CA30A4010BB4F6B730964454644A7DFD4B75C831F73D7C83CBD5E17D16849D3E7E0C9C3AF1DC131842F1B6EA1FDE4481C55D58EC6A846A65";
 
-    private static final long TOKEN_VALIDITY = 10 * 60 * 60 * 1000; // 10 hours
+    private static final long TOKEN_VALIDITY = 365 * 24 * 60 * 60 * 1000; // 1 year in milliseconds
 
     public String generateToken(UserDetails userDetails) {
         return Jwts.builder()

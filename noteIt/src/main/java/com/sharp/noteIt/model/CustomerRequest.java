@@ -15,6 +15,7 @@ public class CustomerRequest implements Serializable{
 	private static final long serialVersionUID = -2102633356770338746L;
 	private Long id;
 	private String firstName;
+	private String refreshToken; 
 	private String email;
 	private String phone;
 	private String password;
@@ -105,9 +106,11 @@ public class CustomerRequest implements Serializable{
 	public void setMessage(String message) {
 		this.message = message;
 	}
-	
-	
-	
-	
-	
+	public String getRefreshToken() {
+		return refreshToken;
+	}
+	public void setRefreshToken(String refreshToken) {
+		this.refreshToken = refreshToken;
+	}
+
 }
